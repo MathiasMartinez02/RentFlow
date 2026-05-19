@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
@@ -99,7 +98,7 @@ export function MaintenanceForm({ isOpen, editingId, isMutating, onSubmit, onClo
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)}>
-          <ScrollArea className="max-h-[calc(85vh-140px)]">
+          <div className="overflow-y-auto max-h-[calc(90vh-140px)]">
             <div className="space-y-5 px-6 pb-4">
 
               {/* Información básica */}
@@ -207,12 +206,15 @@ export function MaintenanceForm({ isOpen, editingId, isMutating, onSubmit, onClo
                     name="tenantId"
                     control={control}
                     render={({ field }) => (
-                      <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                      <Select
+                        value={field.value || "__none__"}
+                        onValueChange={(v) => field.onChange(v === "__none__" ? "" : v)}
+                      >
                         <SelectTrigger className="mt-1.5">
                           <SelectValue placeholder="Sin inquilino específico" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Sin inquilino</SelectItem>
+                          <SelectItem value="__none__">Sin inquilino</SelectItem>
                           {MOCK_TENANTS.filter((t) => t.status === "active").map((t) => (
                             <SelectItem key={t.id} value={t.id}>
                               {t.firstName} {t.lastName}
@@ -271,12 +273,15 @@ export function MaintenanceForm({ isOpen, editingId, isMutating, onSubmit, onClo
                     name="assignedTo"
                     control={control}
                     render={({ field }) => (
-                      <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                      <Select
+                        value={field.value || "__none__"}
+                        onValueChange={(v) => field.onChange(v === "__none__" ? "" : v)}
+                      >
                         <SelectTrigger className="mt-1.5">
                           <SelectValue placeholder="Sin asignar" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Sin asignar</SelectItem>
+                          <SelectItem value="__none__">Sin asignar</SelectItem>
                           {MOCK_TECHNICIANS.map((t) => (
                             <SelectItem key={t.id} value={t.id}>
                               {t.name} — {t.specialty}
@@ -352,7 +357,7 @@ export function MaintenanceForm({ isOpen, editingId, isMutating, onSubmit, onClo
                 />
               </FormSection>
             </div>
-          </ScrollArea>
+          </div>
 
           <DialogFooter className="px-6 py-4 border-t border-border">
             <Button type="button" variant="outline" onClick={onClose} disabled={isMutating}>

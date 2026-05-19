@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { ChevronUp, LogOut, User, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getInitials } from "@/shared/utils/format";
@@ -10,20 +11,33 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-const MOCK_USER = {
-  firstName: "Alex",
-  lastName: "Rivera",
-  email: "alex.rivera@rentflow.io",
-  role: "Propietario",
-};
+import { useAuthStore } from "@/store/auth.store";
 
 interface SidebarUserFooterProps {
   isCollapsed: boolean;
 }
 
+const ROLE_LABELS: Record<string, string> = {
+  owner: "Propietario",
+  admin: "Administrador",
+  agent: "Agente",
+};
+
 export function SidebarUserFooter({ isCollapsed }: SidebarUserFooterProps) {
-  const initials = getInitials(MOCK_USER.firstName, MOCK_USER.lastName);
+  const router = useRouter();
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
+
+  const firstName = user?.firstName ?? "Usuario";
+  const lastName = user?.lastName ?? "";
+  const email = user?.email ?? "";
+  const roleLabel = ROLE_LABELS[user?.role ?? ""] ?? "Usuario";
+  const initials = getInitials(firstName, lastName);
+
+  const handleLogout = () => {
+    logout();
+    router.replace("/login");
+  };
 
   return (
     <div className="border-t border-sidebar-border px-3 py-3">
@@ -44,10 +58,10 @@ export function SidebarUserFooter({ isCollapsed }: SidebarUserFooterProps) {
               <>
                 <div className="flex min-w-0 flex-1 flex-col">
                   <span className="truncate text-xs font-medium text-sidebar-foreground">
-                    {MOCK_USER.firstName} {MOCK_USER.lastName}
+                    {firstName} {lastName}
                   </span>
                   <span className="truncate text-[11px] text-sidebar-foreground/50">
-                    {MOCK_USER.role}
+                    {roleLabel}
                   </span>
                 </div>
                 <ChevronUp className="h-3.5 w-3.5 shrink-0 text-sidebar-foreground/40" />
@@ -57,8 +71,8 @@ export function SidebarUserFooter({ isCollapsed }: SidebarUserFooterProps) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" side="top" className="w-48" sideOffset={8}>
           <div className="px-2 py-1.5">
-            <p className="text-sm font-medium">{MOCK_USER.firstName} {MOCK_USER.lastName}</p>
-            <p className="truncate text-xs text-muted-foreground">{MOCK_USER.email}</p>
+            <p className="text-sm font-medium">{firstName} {lastName}</p>
+            <p className="truncate text-xs text-muted-foreground">{email}</p>
           </div>
           <DropdownMenuSeparator />
           <DropdownMenuItem>
@@ -70,7 +84,10 @@ export function SidebarUserFooter({ isCollapsed }: SidebarUserFooterProps) {
             Configuración
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem className="text-destructive focus:text-destructive">
+          <DropdownMenuItem
+            className="text-destructive focus:text-destructive"
+            onClick={handleLogout}
+          >
             <LogOut className="mr-2 h-4 w-4" />
             Cerrar sesión
           </DropdownMenuItem>

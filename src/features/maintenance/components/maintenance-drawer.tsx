@@ -115,7 +115,7 @@ function DrawerContent({
         {/* Header */}
         <div className="relative shrink-0 bg-gradient-to-br from-slate-950 via-slate-900/60 to-zinc-950 px-5 pt-5 pb-16">
           <div
-            className="absolute inset-0 opacity-10"
+            className="absolute inset-0 opacity-10 pointer-events-none"
             style={{
               backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.2) 1px, transparent 1px)",
               backgroundSize: "18px 18px",
@@ -123,7 +123,7 @@ function DrawerContent({
           />
           <button
             onClick={onClose}
-            className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-md border border-white/10 bg-black/30 text-white/70 backdrop-blur-sm transition-all hover:bg-black/50 hover:text-white"
+            className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-md border border-white/10 bg-black/30 text-white/70 backdrop-blur-sm transition-all hover:bg-black/50 hover:text-white"
           >
             <X className="h-4 w-4" />
           </button>

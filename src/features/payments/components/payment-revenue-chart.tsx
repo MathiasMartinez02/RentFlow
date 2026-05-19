@@ -100,7 +100,7 @@ export function PaymentRevenueChart({ data, isLoading }: PaymentRevenueChartProp
                 tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
                 axisLine={false}
                 tickLine={false}
-                tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
+                tickFormatter={(v) => `$${(v / 1_000_000).toFixed(1)}M`}
               />
               <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--accent))", opacity: 0.5 }} />
               <Bar dataKey="collected" name="collected" radius={[4, 4, 0, 0]} maxBarSize={32}>

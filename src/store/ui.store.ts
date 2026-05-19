@@ -50,6 +50,17 @@ interface UIState {
   closePaymentDrawer: () => void;
   openPaymentForm: (id?: string) => void;
   closePaymentForm: () => void;
+
+  maintenanceView: "kanban" | "table";
+  selectedMaintenanceId: string | null;
+  maintenanceDrawerOpen: boolean;
+  maintenanceFormOpen: boolean;
+  editingMaintenanceId: string | null;
+  setMaintenanceView: (view: "kanban" | "table") => void;
+  openMaintenanceDrawer: (id: string) => void;
+  closeMaintenanceDrawer: () => void;
+  openMaintenanceForm: (id?: string) => void;
+  closeMaintenanceForm: () => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -107,12 +118,25 @@ export const useUIStore = create<UIState>()(
       closePaymentDrawer: () => set({ paymentDrawerOpen: false, selectedPaymentId: null }),
       openPaymentForm: (id) => set({ paymentFormOpen: true, editingPaymentId: id ?? null }),
       closePaymentForm: () => set({ paymentFormOpen: false, editingPaymentId: null }),
+
+      maintenanceView: "kanban",
+      selectedMaintenanceId: null,
+      maintenanceDrawerOpen: false,
+      maintenanceFormOpen: false,
+      editingMaintenanceId: null,
+
+      setMaintenanceView: (view) => set({ maintenanceView: view }),
+      openMaintenanceDrawer: (id) => set({ selectedMaintenanceId: id, maintenanceDrawerOpen: true }),
+      closeMaintenanceDrawer: () => set({ maintenanceDrawerOpen: false, selectedMaintenanceId: null }),
+      openMaintenanceForm: (id) => set({ maintenanceFormOpen: true, editingMaintenanceId: id ?? null }),
+      closeMaintenanceForm: () => set({ maintenanceFormOpen: false, editingMaintenanceId: null }),
     }),
     {
       name: "rentflow-ui",
       partialize: (state) => ({
         sidebarCollapsed: state.sidebarCollapsed,
         propertiesView: state.propertiesView,
+        maintenanceView: state.maintenanceView,
       }),
     }
   )

@@ -104,7 +104,7 @@ export function RevenueChart({ data, isLoading }: RevenueChartProps) {
                 tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
                 axisLine={false}
                 tickLine={false}
-                tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
+                tickFormatter={(v) => `$${(v / 1_000_000).toFixed(1)}M`}
               />
               <Tooltip content={<CustomTooltip />} cursor={{ stroke: "hsl(var(--border))", strokeWidth: 1 }} />
               <Area

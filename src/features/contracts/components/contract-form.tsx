@@ -236,25 +236,25 @@ export function ContractForm({ isOpen, editingId, isMutating, onSubmit, onClose 
               <FormSection title="Condiciones Económicas">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label htmlFor="monthlyRent">Alquiler Mensual (USD)</Label>
+                    <Label htmlFor="monthlyRent">Alquiler Mensual (ARS)</Label>
                     <Input
                       id="monthlyRent"
                       type="number"
                       min={0}
                       className="mt-1.5"
-                      placeholder="3200"
+                      placeholder="850000"
                       {...register("monthlyRent")}
                     />
                     <FieldError message={errors.monthlyRent?.message} />
                   </div>
                   <div>
-                    <Label htmlFor="deposit">Depósito de Garantía (USD)</Label>
+                    <Label htmlFor="deposit">Depósito de Garantía (ARS)</Label>
                     <Input
                       id="deposit"
                       type="number"
                       min={0}
                       className="mt-1.5"
-                      placeholder="6400"
+                      placeholder="1700000"
                       {...register("deposit")}
                     />
                     <FieldError message={errors.deposit?.message} />
@@ -263,13 +263,13 @@ export function ContractForm({ isOpen, editingId, isMutating, onSubmit, onClose 
 
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <Label htmlFor="expenses">Expensas (USD)</Label>
+                    <Label htmlFor="expenses">Expensas (ARS)</Label>
                     <Input
                       id="expenses"
                       type="number"
                       min={0}
                       className="mt-1.5"
-                      placeholder="420"
+                      placeholder="105000"
                       {...register("expenses")}
                     />
                   </div>

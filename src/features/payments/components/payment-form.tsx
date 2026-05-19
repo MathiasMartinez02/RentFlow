@@ -268,7 +268,7 @@ export function PaymentForm({ isOpen, editingId, isMutating, onSubmit, onClose }
               <FormSection title="Importes y Fechas">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label htmlFor="amount">Monto (USD)</Label>
+                    <Label htmlFor="amount">Monto (ARS)</Label>
                     <Input
                       id="amount"
                       type="number"

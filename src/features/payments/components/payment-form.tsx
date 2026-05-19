@@ -1,0 +1,404 @@
+"use client";
+
+import { useEffect, useMemo } from "react";
+import { useForm, Controller, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { MOCK_PAYMENTS } from "@/mock/payments";
+import { MOCK_TENANTS } from "@/mock/tenants";
+import { MOCK_CONTRACTS } from "@/mock/contracts";
+import { MOCK_PROPERTIES } from "@/mock/properties";
+import {
+  paymentSchema,
+  DEFAULT_PAYMENT_VALUES,
+  type PaymentFormValues,
+} from "../schemas/payment.schema";
+
+const MESES = [
+  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+];
+
+function conceptFromPeriod(period: string): string {
+  if (!period || period.length < 7) return "";
+  const [year, month] = period.split("-");
+  const monthNum = parseInt(month, 10);
+  if (monthNum < 1 || monthNum > 12) return "";
+  return `Alquiler ${MESES[monthNum - 1]} ${year}`;
+}
+
+function FieldError({ message }: { message?: string }) {
+  if (!message) return null;
+  return <p className="mt-1 text-xs text-destructive">{message}</p>;
+}
+
+function FormSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-3">
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        {title}
+      </h3>
+      {children}
+    </div>
+  );
+}
+
+interface PaymentFormProps {
+  isOpen: boolean;
+  editingId: string | null;
+  isMutating: boolean;
+  onSubmit: (data: PaymentFormValues) => Promise<void>;
+  onClose: () => void;
+}
+
+export function PaymentForm({ isOpen, editingId, isMutating, onSubmit, onClose }: PaymentFormProps) {
+  const editingPayment = useMemo(
+    () => (editingId ? MOCK_PAYMENTS.find((p) => p.id === editingId) : null),
+    [editingId]
+  );
+
+  const defaultValues: PaymentFormValues = useMemo(() => {
+    if (!editingPayment) return DEFAULT_PAYMENT_VALUES;
+    return {
+      tenantId: editingPayment.tenantId,
+      propertyId: editingPayment.propertyId,
+      contractId: editingPayment.contractId,
+      period: editingPayment.period,
+      concept: editingPayment.concept,
+      amount: editingPayment.amount,
+      paidAmount: editingPayment.paidAmount ?? "",
+      dueDate: editingPayment.dueDate,
+      paidDate: editingPayment.paidDate ?? "",
+      status: editingPayment.status,
+      method: editingPayment.method ?? "",
+      reference: editingPayment.reference ?? "",
+      notes: editingPayment.notes ?? "",
+    };
+  }, [editingPayment]);
+
+  const {
+    register,
+    control,
+    handleSubmit,
+    reset,
+    setValue,
+    formState: { errors },
+  } = useForm<PaymentFormValues>({
+    resolver: zodResolver(paymentSchema),
+    defaultValues,
+  });
+
+  const watchedTenantId = useWatch({ control, name: "tenantId" });
+  const watchedPeriod = useWatch({ control, name: "period" });
+  const watchedStatus = useWatch({ control, name: "status" });
+
+  useEffect(() => {
+    if (isOpen) reset(defaultValues);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, editingId]);
+
+  // Auto-fill property and contract when tenant is selected
+  useEffect(() => {
+    if (!watchedTenantId || editingId) return;
+    const tenant = MOCK_TENANTS.find((t) => t.id === watchedTenantId);
+    if (tenant) {
+      if (tenant.propertyId) setValue("propertyId", tenant.propertyId);
+      if (tenant.contractId) setValue("contractId", tenant.contractId);
+      const contract = MOCK_CONTRACTS.find((c) => c.id === tenant.contractId);
+      if (contract) setValue("amount", contract.monthlyRent);
+    }
+  }, [watchedTenantId, editingId, setValue]);
+
+  // Auto-generate concept from period
+  useEffect(() => {
+    if (!watchedPeriod || editingId) return;
+    const generated = conceptFromPeriod(watchedPeriod);
+    if (generated) setValue("concept", generated);
+  }, [watchedPeriod, editingId, setValue]);
+
+  const showPaidFields = watchedStatus === "paid" || watchedStatus === "partial";
+  const showPartialAmount = watchedStatus === "partial";
+
+  const activeTenants = MOCK_TENANTS.filter((t) => t.status === "active");
+
+  const availableContracts = useMemo(() => {
+    if (!watchedTenantId) return MOCK_CONTRACTS.filter((c) => c.status === "active");
+    return MOCK_CONTRACTS.filter(
+      (c) => c.tenantId === watchedTenantId && c.status === "active"
+    );
+  }, [watchedTenantId]);
+
+  const availableProperties = useMemo(() => {
+    if (!watchedTenantId) return MOCK_PROPERTIES;
+    const tenant = MOCK_TENANTS.find((t) => t.id === watchedTenantId);
+    if (!tenant?.propertyId) return MOCK_PROPERTIES;
+    return MOCK_PROPERTIES.filter((p) => p.id === tenant.propertyId);
+  }, [watchedTenantId]);
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-xl p-0 gap-0">
+        <DialogHeader className="px-6 pt-6 pb-4">
+          <DialogTitle>
+            {editingId ? "Editar Pago" : "Registrar Pago"}
+          </DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <ScrollArea className="max-h-[calc(85vh-140px)]">
+            <div className="space-y-5 px-6 pb-4">
+
+              {/* Partes */}
+              <FormSection title="Partes del Contrato">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Inquilino</Label>
+                    <Controller
+                      name="tenantId"
+                      control={control}
+                      render={({ field }) => (
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger className="mt-1.5">
+                            <SelectValue placeholder="Seleccionar inquilino" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {activeTenants.map((t) => (
+                              <SelectItem key={t.id} value={t.id}>
+                                {t.firstName} {t.lastName}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                    <FieldError message={errors.tenantId?.message} />
+                  </div>
+
+                  <div>
+                    <Label>Propiedad</Label>
+                    <Controller
+                      name="propertyId"
+                      control={control}
+                      render={({ field }) => (
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger className="mt-1.5">
+                            <SelectValue placeholder="Seleccionar propiedad" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableProperties.map((p) => (
+                              <SelectItem key={p.id} value={p.id}>
+                                {p.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                    <FieldError message={errors.propertyId?.message} />
+                  </div>
+                </div>
+
+                <div>
+                  <Label>Contrato</Label>
+                  <Controller
+                    name="contractId"
+                    control={control}
+                    render={({ field }) => (
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger className="mt-1.5">
+                          <SelectValue placeholder="Seleccionar contrato" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableContracts.map((c) => (
+                            <SelectItem key={c.id} value={c.id}>
+                              CON-{new Date(c.startDate).getFullYear()}-{c.id.replace(/[^0-9]/g, "").padStart(3, "0")} · ${c.monthlyRent}/mes
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  <FieldError message={errors.contractId?.message} />
+                </div>
+              </FormSection>
+
+              <Separator />
+
+              {/* Período y concepto */}
+              <FormSection title="Período y Concepto">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="period">Período</Label>
+                    <Input
+                      id="period"
+                      type="month"
+                      className="mt-1.5"
+                      {...register("period")}
+                    />
+                    <FieldError message={errors.period?.message} />
+                  </div>
+                  <div>
+                    <Label htmlFor="concept">Concepto</Label>
+                    <Input
+                      id="concept"
+                      placeholder="Alquiler Mayo 2026"
+                      className="mt-1.5"
+                      {...register("concept")}
+                    />
+                    <FieldError message={errors.concept?.message} />
+                  </div>
+                </div>
+              </FormSection>
+
+              <Separator />
+
+              {/* Importes y fechas */}
+              <FormSection title="Importes y Fechas">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="amount">Monto (USD)</Label>
+                    <Input
+                      id="amount"
+                      type="number"
+                      min={0}
+                      step={0.01}
+                      className="mt-1.5"
+                      placeholder="3200"
+                      {...register("amount")}
+                    />
+                    <FieldError message={errors.amount?.message} />
+                  </div>
+                  <div>
+                    <Label htmlFor="dueDate">Fecha de Vencimiento</Label>
+                    <Input
+                      id="dueDate"
+                      type="date"
+                      className="mt-1.5"
+                      {...register("dueDate")}
+                    />
+                    <FieldError message={errors.dueDate?.message} />
+                  </div>
+                </div>
+
+                <div>
+                  <Label>Estado</Label>
+                  <Controller
+                    name="status"
+                    control={control}
+                    render={({ field }) => (
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger className="mt-1.5">
+                          <SelectValue placeholder="Estado del pago" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pendiente</SelectItem>
+                          <SelectItem value="paid">Pagado</SelectItem>
+                          <SelectItem value="overdue">Vencido</SelectItem>
+                          <SelectItem value="partial">Parcialmente Pagado</SelectItem>
+                          <SelectItem value="cancelled">Cancelado</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  <FieldError message={errors.status?.message} />
+                </div>
+
+                {showPaidFields && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="paidDate">Fecha de Pago</Label>
+                      <Input
+                        id="paidDate"
+                        type="date"
+                        className="mt-1.5"
+                        {...register("paidDate")}
+                      />
+                    </div>
+                    <div>
+                      <Label>Método de Pago</Label>
+                      <Controller
+                        name="method"
+                        control={control}
+                        render={({ field }) => (
+                          <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                            <SelectTrigger className="mt-1.5">
+                              <SelectValue placeholder="Método" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="transfer">Transferencia</SelectItem>
+                              <SelectItem value="cash">Efectivo</SelectItem>
+                              <SelectItem value="card">Tarjeta</SelectItem>
+                              <SelectItem value="auto_debit">Débito Automático</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {showPartialAmount && (
+                  <div>
+                    <Label htmlFor="paidAmount">Monto Cobrado (USD)</Label>
+                    <Input
+                      id="paidAmount"
+                      type="number"
+                      min={0}
+                      step={0.01}
+                      className="mt-1.5"
+                      placeholder="Ingresá el monto parcial cobrado"
+                      {...register("paidAmount")}
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <Label htmlFor="reference">Referencia / N° de transacción</Label>
+                  <Input
+                    id="reference"
+                    placeholder="TRF-260501-001"
+                    className="mt-1.5"
+                    {...register("reference")}
+                  />
+                </div>
+              </FormSection>
+
+              <Separator />
+
+              {/* Observaciones */}
+              <FormSection title="Observaciones">
+                <Textarea
+                  rows={3}
+                  placeholder="Notas sobre el pago, acuerdos, recordatorios, etc."
+                  {...register("notes")}
+                />
+              </FormSection>
+            </div>
+          </ScrollArea>
+
+          <DialogFooter className="px-6 py-4 border-t border-border">
+            <Button type="button" variant="outline" onClick={onClose} disabled={isMutating}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={isMutating} className="min-w-[120px]">
+              {isMutating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {editingId ? "Guardar Cambios" : "Registrar Pago"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

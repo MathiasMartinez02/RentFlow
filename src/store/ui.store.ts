@@ -41,6 +41,15 @@ interface UIState {
   closeContractDrawer: () => void;
   openContractForm: (id?: string) => void;
   closeContractForm: () => void;
+
+  selectedPaymentId: string | null;
+  paymentDrawerOpen: boolean;
+  paymentFormOpen: boolean;
+  editingPaymentId: string | null;
+  openPaymentDrawer: (id: string) => void;
+  closePaymentDrawer: () => void;
+  openPaymentForm: (id?: string) => void;
+  closePaymentForm: () => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -88,6 +97,16 @@ export const useUIStore = create<UIState>()(
       closeContractDrawer: () => set({ contractDrawerOpen: false, selectedContractId: null }),
       openContractForm: (id) => set({ contractFormOpen: true, editingContractId: id ?? null }),
       closeContractForm: () => set({ contractFormOpen: false, editingContractId: null }),
+
+      selectedPaymentId: null,
+      paymentDrawerOpen: false,
+      paymentFormOpen: false,
+      editingPaymentId: null,
+
+      openPaymentDrawer: (id) => set({ selectedPaymentId: id, paymentDrawerOpen: true }),
+      closePaymentDrawer: () => set({ paymentDrawerOpen: false, selectedPaymentId: null }),
+      openPaymentForm: (id) => set({ paymentFormOpen: true, editingPaymentId: id ?? null }),
+      closePaymentForm: () => set({ paymentFormOpen: false, editingPaymentId: null }),
     }),
     {
       name: "rentflow-ui",

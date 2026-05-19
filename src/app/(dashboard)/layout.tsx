@@ -4,6 +4,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { MobileSidebar } from "@/components/layout/mobile-sidebar";
 import { AuthGuard } from "@/features/auth/components/auth-guard";
 import { OnboardingModal } from "@/features/auth/components/onboarding-modal";
+import { CommandPalette } from "@/features/command-palette";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -30,6 +31,7 @@ export default function DashboardLayout({
         </div>
       </div>
       <OnboardingModal />
+      <CommandPalette />
     </AuthGuard>
   );
 }

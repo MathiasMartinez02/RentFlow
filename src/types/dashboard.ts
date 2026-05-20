@@ -11,6 +11,7 @@ export interface RevenueDataPoint {
   revenue: number;
   expenses: number;
   net: number;
+  payments: number;
 }
 
 export interface OccupancyDataPoint {
@@ -36,6 +37,32 @@ export interface ActivityEvent {
   metadata?: Record<string, unknown>;
 }
 
+export interface PaymentsAnalytics {
+  collectionRate: number;
+  montoVencido: number;
+  mora: number;
+  cobradoUltimos30: number;
+  pendienteUltimos30: number;
+  porMetodoPago: Array<{ method: string; count: number; total: number }>;
+}
+
+export interface MaintenanceAnalytics {
+  costosTotales: number;
+  costoEstimadoAbiertos: number;
+  costosUltimos30Dias: number;
+  promedioResolucionDias: number | null;
+  porCategoria: Array<{ category: string; count: number; total: number }>;
+  porPrioridad: Array<{ priority: string; count: number }>;
+}
+
+export interface RevenueMetadata {
+  growth: number;
+  promedioMensual: number;
+  mejorMes: string;
+  mejorMesIngresos: number;
+  totalPeriodo: number;
+}
+
 export interface DashboardData {
   metrics: {
     totalRevenue: MetricCard;
@@ -46,7 +73,10 @@ export interface DashboardData {
     maintenanceRequests: MetricCard;
   };
   revenueHistory: RevenueDataPoint[];
+  revenueMetadata: RevenueMetadata;
   occupancyHistory: OccupancyDataPoint[];
   recentActivity: ActivityEvent[];
-  propertyDistribution: Array<{ type: string; count: number; percentage: number }>;
+  propertyDistribution: Array<{ type: string; count: number; percentage: number; occupancyRate: number }>;
+  paymentsAnalytics: PaymentsAnalytics;
+  maintenanceAnalytics: MaintenanceAnalytics;
 }

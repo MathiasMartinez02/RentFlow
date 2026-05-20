@@ -69,6 +69,7 @@ export function PropertyDistribution({ data, isLoading }: PropertyDistributionPr
                       <div className="rounded-lg border border-border bg-popover p-2 shadow-xl text-xs">
                         <p className="font-medium">{d.type}</p>
                         <p className="text-muted-foreground">{d.count} unidades · {d.percentage}%</p>
+                        <p className="text-muted-foreground">Ocupación: {d.occupancyRate}%</p>
                       </div>
                     );
                   }}
@@ -76,7 +77,7 @@ export function PropertyDistribution({ data, isLoading }: PropertyDistributionPr
               </PieChart>
             </ResponsiveContainer>
 
-            <div className="flex-1 space-y-2">
+            <div className="flex-1 space-y-2.5">
               {data?.map((item, index) => (
                 <div key={item.type} className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
@@ -89,6 +90,23 @@ export function PropertyDistribution({ data, isLoading }: PropertyDistributionPr
                   <div className="flex items-center gap-1.5 shrink-0">
                     <span className="text-xs font-medium text-foreground">{item.count}</span>
                     <span className="text-[10px] text-muted-foreground/60">({item.percentage}%)</span>
+                    <span
+                      className="text-[10px] font-medium px-1 py-0.5 rounded"
+                      style={{
+                        backgroundColor: item.occupancyRate >= 70
+                          ? "hsl(142,70%,45%,0.1)"
+                          : item.occupancyRate >= 40
+                          ? "hsl(38,92%,50%,0.1)"
+                          : "hsl(0,72%,51%,0.1)",
+                        color: item.occupancyRate >= 70
+                          ? "hsl(142,70%,35%)"
+                          : item.occupancyRate >= 40
+                          ? "hsl(38,92%,40%)"
+                          : "hsl(0,72%,51%)",
+                      }}
+                    >
+                      {item.occupancyRate}%
+                    </span>
                   </div>
                 </div>
               ))}

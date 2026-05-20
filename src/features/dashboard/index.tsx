@@ -6,6 +6,9 @@ import { RevenueChart } from "./components/revenue-chart";
 import { OccupancyChart } from "./components/occupancy-chart";
 import { RecentActivity } from "./components/recent-activity";
 import { PropertyDistribution } from "./components/property-distribution";
+import { FinancialHealthCard } from "./components/financial-health-card";
+import { PaymentMethodsChart } from "./components/payment-methods-chart";
+import { MaintenanceStatsCard } from "./components/maintenance-stats-card";
 import { useDashboardData } from "./hooks/use-dashboard-data";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
@@ -37,23 +40,43 @@ export function DashboardView() {
       {/* Metrics */}
       <MetricsGrid metrics={data?.metrics} isLoading={isLoading} />
 
-      {/* Charts row */}
+      {/* Revenue + Occupancy */}
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <RevenueChart data={data?.revenueHistory} isLoading={isLoading} />
+          <RevenueChart
+            data={data?.revenueHistory}
+            metadata={data?.revenueMetadata}
+            isLoading={isLoading}
+          />
         </div>
         <OccupancyChart
           data={data?.occupancyHistory}
           currentRate={
             typeof data?.metrics.occupancyRate.value === "string"
-              ? parseFloat(data?.metrics.occupancyRate.value)
+              ? parseFloat(data.metrics.occupancyRate.value)
               : undefined
           }
           isLoading={isLoading}
         />
       </div>
 
-      {/* Activity + Distribution row */}
+      {/* Financial Health + Payment Methods + Maintenance */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        <FinancialHealthCard
+          data={data?.paymentsAnalytics}
+          isLoading={isLoading}
+        />
+        <PaymentMethodsChart
+          data={data?.paymentsAnalytics?.porMetodoPago}
+          isLoading={isLoading}
+        />
+        <MaintenanceStatsCard
+          data={data?.maintenanceAnalytics}
+          isLoading={isLoading}
+        />
+      </div>
+
+      {/* Activity + Portfolio Distribution */}
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <RecentActivity events={data?.recentActivity} isLoading={isLoading} />

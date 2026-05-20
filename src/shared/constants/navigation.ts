@@ -65,6 +65,12 @@ export const NAV_GROUPS: NavGroup[] = [
         icon: "Wrench",
         description: "Solicitudes de reparación",
       },
+      {
+        label: "Actividad",
+        href: "/actividad",
+        icon: "Activity",
+        description: "Historial global de eventos",
+      },
     ],
   },
 ];

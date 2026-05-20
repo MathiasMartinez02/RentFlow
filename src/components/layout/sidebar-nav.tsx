@@ -10,6 +10,7 @@ import {
   CreditCard,
   Wrench,
   Settings,
+  Activity,
   type LucideProps,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -24,6 +25,7 @@ const ICON_MAP: Record<string, React.ComponentType<LucideProps>> = {
   CreditCard,
   Wrench,
   Settings,
+  Activity,
 };
 
 interface NavItemProps {

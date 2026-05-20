@@ -1,12 +1,13 @@
 "use client";
 
-import { Bell, Menu, Search, Moon, Sun } from "lucide-react";
+import { Menu, Search, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useMounted } from "@/hooks/use-mounted";
 import { Breadcrumbs } from "./breadcrumbs";
 import { cn } from "@/lib/utils";
 import { useCommandPaletteStore } from "@/features/command-palette";
+import { NotificationsBell } from "@/features/notifications";
 
 export function Navbar() {
   const { openMobile } = useSidebar();
@@ -51,15 +52,7 @@ export function Navbar() {
         </button>
 
         {/* Notifications */}
-        <button
-          className="relative rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-          aria-label="Notificaciones"
-        >
-          <Bell className="h-4 w-4" />
-          <span className="absolute right-1 top-1 flex h-2 w-2 items-center justify-center rounded-full bg-primary">
-            <span className="absolute h-full w-full animate-ping rounded-full bg-primary opacity-75" />
-          </span>
-        </button>
+        <NotificationsBell />
 
         {/* Theme toggle */}
         {mounted && (

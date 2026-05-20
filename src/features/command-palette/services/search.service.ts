@@ -1,8 +1,4 @@
-import { MOCK_PROPERTIES } from "@/mock/properties";
-import { MOCK_TENANTS } from "@/mock/tenants";
-import { MOCK_CONTRACTS } from "@/mock/contracts";
-import { MOCK_PAYMENTS } from "@/mock/payments";
-import { MOCK_MAINTENANCE } from "@/mock/maintenance";
+import { useCatalogStore } from "@/store/catalog.store";
 import type { SearchHit } from "../types";
 
 const MAX_PER_GROUP = 5;
@@ -64,18 +60,21 @@ function lookupBadge(
 }
 
 function tenantName(id: string): string {
-  const t = MOCK_TENANTS.find((t) => t.id === id);
+  const { tenants } = useCatalogStore.getState();
+  const t = tenants.find((t) => t.id === id);
   return t ? `${t.firstName} ${t.lastName}` : id;
 }
 
 function propertyName(id: string): string {
-  return MOCK_PROPERTIES.find((p) => p.id === id)?.name ?? id;
+  const { properties } = useCatalogStore.getState();
+  return properties.find((p) => p.id === id)?.name ?? id;
 }
 
 /* ─── Per-entity search ──────────────────────────────────────────── */
 
 function searchProperties(q: string): SearchHit[] {
-  return MOCK_PROPERTIES
+  const { properties } = useCatalogStore.getState();
+  return properties
     .filter((p) => matches(q, p.name, p.address, p.city, p.state, p.id))
     .slice(0, MAX_PER_GROUP)
     .map((p) => ({
@@ -88,7 +87,8 @@ function searchProperties(q: string): SearchHit[] {
 }
 
 function searchTenants(q: string): SearchHit[] {
-  return MOCK_TENANTS
+  const { tenants } = useCatalogStore.getState();
+  return tenants
     .filter((t) =>
       matches(q, t.firstName, t.lastName, t.email, t.phone, t.id, `${t.firstName} ${t.lastName}`)
     )
@@ -103,7 +103,8 @@ function searchTenants(q: string): SearchHit[] {
 }
 
 function searchContracts(q: string): SearchHit[] {
-  return MOCK_CONTRACTS
+  const { contracts } = useCatalogStore.getState();
+  return contracts
     .filter((c) => {
       const tn = tenantName(c.tenantId);
       const pn = propertyName(c.propertyId);
@@ -119,23 +120,13 @@ function searchContracts(q: string): SearchHit[] {
     }));
 }
 
-function searchPayments(q: string): SearchHit[] {
-  return MOCK_PAYMENTS
-    .filter((p) =>
-      matches(q, p.id, p.concept, tenantName(p.tenantId), propertyName(p.propertyId), p.period, p.reference)
-    )
-    .slice(0, MAX_PER_GROUP)
-    .map((p) => ({
-      type: "payment" as const,
-      id: p.id,
-      label: p.concept,
-      sublabel: `${tenantName(p.tenantId)} · ${formatARS(p.amount)}`,
-      badge: lookupBadge(PAYMENT_STATUS, p.status),
-    }));
+function searchPayments(_q: string): SearchHit[] {
+  return [];
 }
 
 function searchMaintenance(q: string): SearchHit[] {
-  return MOCK_MAINTENANCE
+  const { tickets } = useCatalogStore.getState();
+  return tickets
     .filter((m) =>
       matches(q, m.id, m.title, m.description, propertyName(m.propertyId), m.category, m.notes)
     )

@@ -1,75 +1,162 @@
-import { mockFetch, simulateDelay } from "./base.service";
-import { MOCK_PROPERTIES } from "@/mock/properties";
-import type { Property, PropertyFilters } from "@/types/property";
+import { api } from "@/lib/api-client";
+import type { Property, PropertyFilters, PropertyType, PropertyStatus } from "@/types/property";
 import type { ApiResponse } from "@/types";
 
-let _properties = [...MOCK_PROPERTIES];
+// ─── Enum mappers ───────────────────────────────────────────────────────────
 
-function applyFilters(data: Property[], filters?: PropertyFilters): Property[] {
-  let result = [...data];
+const PROPERTY_TYPE_TO_BACKEND: Record<PropertyType | string, string> = {
+  apartment: "APARTAMENTO",
+  house: "CASA",
+  commercial: "LOCAL",
+  studio: "OFICINA",
+};
 
-  if (filters?.search) {
-    const q = filters.search.toLowerCase();
-    result = result.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.address.toLowerCase().includes(q) ||
-        p.city.toLowerCase().includes(q)
-    );
-  }
+const PROPERTY_TYPE_FROM_BACKEND: Record<string, PropertyType> = {
+  APARTAMENTO: "apartment",
+  CASA: "house",
+  LOCAL: "commercial",
+  OFICINA: "studio",
+  DUPLEX: "apartment",
+};
+
+const PROPERTY_STATUS_TO_BACKEND: Record<PropertyStatus | string, string> = {
+  available: "DISPONIBLE",
+  occupied: "OCUPADA",
+  maintenance: "MANTENIMIENTO",
+  reserved: "DISPONIBLE",
+};
+
+const PROPERTY_STATUS_FROM_BACKEND: Record<string, PropertyStatus> = {
+  DISPONIBLE: "available",
+  OCUPADA: "occupied",
+  MANTENIMIENTO: "maintenance",
+};
+
+// ─── Backend DTO shape ───────────────────────────────────────────────────────
+
+interface BackendProperty {
+  id: string;
+  nombre: string;
+  descripcion?: string;
+  direccion: string;
+  ciudad: string;
+  provincia?: string;
+  codigoPostal?: string;
+  tipoPropiedad: string;
+  estado: string;
+  precioMensual: number;
+  expensas?: number;
+  habitaciones: number;
+  banos: number;
+  metrosCuadrados: number;
+  imagenPrincipal?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface BackendPaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+// ─── Mapper ─────────────────────────────────────────────────────────────────
+
+function fromBackend(raw: BackendProperty): Property {
+  return {
+    id: raw.id,
+    name: raw.nombre,
+    description: raw.descripcion,
+    address: raw.direccion,
+    city: raw.ciudad,
+    state: raw.provincia,
+    type: PROPERTY_TYPE_FROM_BACKEND[raw.tipoPropiedad] ?? "apartment",
+    status: PROPERTY_STATUS_FROM_BACKEND[raw.estado] ?? "available",
+    rent: Number(raw.precioMensual),
+    bedrooms: raw.habitaciones,
+    bathrooms: raw.banos,
+    area: raw.metrosCuadrados,
+    images: raw.imagenPrincipal
+      ? [`${process.env.NEXT_PUBLIC_WS_URL ?? "http://localhost:3000"}${raw.imagenPrincipal}`]
+      : [],
+    deposit: 0,
+    createdAt: raw.createdAt,
+    updatedAt: raw.updatedAt,
+  };
+}
+
+function toCreatePayload(data: Partial<Property> & { name: string; address: string; city: string }) {
+  return {
+    nombre: data.name,
+    descripcion: data.description,
+    direccion: data.address,
+    ciudad: data.city,
+    provincia: data.state,
+    tipoPropiedad: PROPERTY_TYPE_TO_BACKEND[data.type ?? "apartment"],
+    precioMensual: data.rent,
+    habitaciones: data.bedrooms,
+    banos: data.bathrooms,
+    metrosCuadrados: data.area,
+    estado: PROPERTY_STATUS_TO_BACKEND[data.status ?? "available"],
+  };
+}
+
+// ─── Build query string from filters ────────────────────────────────────────
+
+function buildQuery(filters?: PropertyFilters, extra?: Record<string, unknown>): string {
+  const params = new URLSearchParams();
+  if (filters?.search) params.set("search", filters.search);
   if (filters?.status && filters.status !== "all") {
-    result = result.filter((p) => p.status === filters.status);
+    params.set("estado", PROPERTY_STATUS_TO_BACKEND[filters.status] ?? filters.status);
   }
   if (filters?.type && filters.type !== "all") {
-    result = result.filter((p) => p.type === filters.type);
+    params.set("tipoPropiedad", PROPERTY_TYPE_TO_BACKEND[filters.type] ?? filters.type);
   }
-  if (filters?.city) {
-    result = result.filter((p) => p.city.toLowerCase().includes(filters.city!.toLowerCase()));
+  if (extra) {
+    Object.entries(extra).forEach(([k, v]) => {
+      if (v !== undefined && v !== null) params.set(k, String(v));
+    });
   }
-  if (filters?.minRent !== undefined) {
-    result = result.filter((p) => p.rent >= filters.minRent!);
-  }
-  if (filters?.maxRent !== undefined) {
-    result = result.filter((p) => p.rent <= filters.maxRent!);
-  }
-
-  return result;
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
 }
+
+// ─── Service ─────────────────────────────────────────────────────────────────
 
 export const propertiesService = {
   async getAll(filters?: PropertyFilters): Promise<ApiResponse<Property[]>> {
-    const data = await mockFetch(_properties);
-    const filtered = applyFilters(data, filters);
-    return { data: filtered, total: filtered.length };
+    const qs = buildQuery(filters, { limit: 100 });
+    const res = await api.get<BackendPaginatedResponse<BackendProperty>>(`/properties${qs}`);
+    const items = (res.items ?? []).map(fromBackend);
+    return { data: items, total: res.total ?? items.length };
   },
 
   async getById(id: string): Promise<Property | null> {
-    await simulateDelay(300);
-    return _properties.find((p) => p.id === id) ?? null;
+    try {
+      const raw = await api.get<BackendProperty>(`/properties/${id}`);
+      return fromBackend(raw);
+    } catch {
+      return null;
+    }
   },
 
   async create(payload: Omit<Property, "id" | "createdAt" | "updatedAt">): Promise<Property> {
-    await simulateDelay(700);
-    const newProperty: Property = {
-      ...payload,
-      id: `prop-${String(Date.now()).slice(-6)}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    _properties = [newProperty, ..._properties];
-    return newProperty;
+    const raw = await api.post<BackendProperty>("/properties", toCreatePayload(payload as Property));
+    return fromBackend(raw);
   },
 
   async update(id: string, payload: Partial<Property>): Promise<Property> {
-    await simulateDelay(600);
-    const idx = _properties.findIndex((p) => p.id === id);
-    if (idx === -1) throw new Error(`Property ${id} not found`);
-    _properties[idx] = { ..._properties[idx], ...payload, updatedAt: new Date().toISOString() };
-    return _properties[idx];
+    const raw = await api.patch<BackendProperty>(`/properties/${id}`, toCreatePayload(payload as Property));
+    return fromBackend(raw);
   },
 
   async delete(id: string): Promise<void> {
-    await simulateDelay(500);
-    _properties = _properties.filter((p) => p.id !== id);
+    await api.delete(`/properties/${id}`);
+  },
+
+  async getStats() {
+    return api.get<Record<string, number>>("/properties/stats/overview");
   },
 };

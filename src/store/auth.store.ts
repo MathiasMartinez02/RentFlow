@@ -5,7 +5,8 @@ import type { AuthUser, LoginCredentials, RegisterData } from "@/types/auth";
 
 interface AuthState {
   user: AuthUser | null;
-  token: string | null;
+  token: string | null;           // accessToken
+  refreshToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   isNewUser: boolean;
@@ -13,6 +14,7 @@ interface AuthState {
   _hasHydrated: boolean;
 
   setHasHydrated: (v: boolean) => void;
+  setTokens: (access: string, refresh: string) => void;
   login: (credentials: LoginCredentials) => Promise<void>;
   loginWithProvider: (provider: "google" | "github") => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
@@ -24,9 +26,10 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       token: null,
+      refreshToken: null,
       isAuthenticated: false,
       isLoading: false,
       isNewUser: false,
@@ -35,13 +38,17 @@ export const useAuthStore = create<AuthState>()(
 
       setHasHydrated: (v) => set({ _hasHydrated: v }),
 
+      setTokens: (access, refresh) =>
+        set({ token: access, refreshToken: refresh }),
+
       login: async (credentials) => {
         set({ isLoading: true });
         try {
           const session = await authService.login(credentials);
           set({
             user: session.user,
-            token: session.token,
+            token: session.accessToken,
+            refreshToken: session.refreshToken,
             isAuthenticated: true,
             isNewUser: false,
             isLoading: false,
@@ -52,21 +59,8 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      loginWithProvider: async (provider) => {
-        set({ isLoading: true });
-        try {
-          const session = await authService.loginWithProvider(provider);
-          set({
-            user: session.user,
-            token: session.token,
-            isAuthenticated: true,
-            isNewUser: false,
-            isLoading: false,
-          });
-        } catch (err) {
-          set({ isLoading: false });
-          throw err;
-        }
+      loginWithProvider: async (_provider) => {
+        throw new Error("El inicio de sesión con proveedores no está disponible actualmente.");
       },
 
       register: async (data) => {
@@ -75,7 +69,8 @@ export const useAuthStore = create<AuthState>()(
           const session = await authService.register(data);
           set({
             user: session.user,
-            token: session.token,
+            token: session.accessToken,
+            refreshToken: session.refreshToken,
             isAuthenticated: true,
             isNewUser: true,
             onboardingCompleted: false,
@@ -88,9 +83,12 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
+        const rt = get().refreshToken;
+        if (rt) authService.logout(rt).catch(() => {});
         set({
           user: null,
           token: null,
+          refreshToken: null,
           isAuthenticated: false,
           isNewUser: false,
         });
@@ -120,6 +118,7 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         user: state.user,
         token: state.token,
+        refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
         onboardingCompleted: state.onboardingCompleted,
       }),

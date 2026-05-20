@@ -32,10 +32,7 @@ import {
   getInitials,
   getContractCode,
 } from "@/shared/utils/format";
-import { MOCK_CONTRACTS } from "@/mock/contracts";
-import { MOCK_PROPERTIES } from "@/mock/properties";
-import { MOCK_TENANTS } from "@/mock/tenants";
-import { MOCK_PAYMENT_HISTORY } from "@/mock/payments";
+import { useCatalogStore } from "@/store/catalog.store";
 import type { Contract } from "@/types/contract";
 import { getDaysLeft, isExpiringSoon } from "../hooks/use-contracts";
 
@@ -197,16 +194,11 @@ function DrawerContent({
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
 }) {
-  const contract = MOCK_CONTRACTS.find((c) => c.id === contractId);
-  const property = contract ? MOCK_PROPERTIES.find((p) => p.id === contract.propertyId) : null;
-  const tenant = contract ? MOCK_TENANTS.find((t) => t.id === contract.tenantId) : null;
-  const payments = useMemo(
-    () =>
-      MOCK_PAYMENT_HISTORY.filter((p) => p.tenantId === contract?.tenantId).sort(
-        (a, b) => b.month.localeCompare(a.month)
-      ),
-    [contract]
-  );
+  const { contracts, properties, tenants } = useCatalogStore();
+  const contract = contracts.find((c) => c.id === contractId);
+  const property = contract ? properties.find((p) => p.id === contract.propertyId) : null;
+  const tenant = contract ? tenants.find((t) => t.id === contract.tenantId) : null;
+  const payments: import("@/types/payment").Payment[] = [];
 
   const daysLeft = contract ? getDaysLeft(contract.endDate) : 0;
 
@@ -582,18 +574,18 @@ function DrawerContent({
                         key={p.id}
                         className={cn(
                           "flex items-center justify-between rounded-lg border px-3 py-2",
-                          p.status === "pagado" ? "border-border" : "border-destructive/30 bg-destructive/5"
+                          p.status === "paid" ? "border-border" : "border-destructive/30 bg-destructive/5"
                         )}
                       >
                         <div className="flex items-center gap-2">
                           <div
                             className={cn(
                               "h-1.5 w-1.5 rounded-full",
-                              p.status === "pagado" ? "bg-success" : "bg-destructive"
+                              p.status === "paid" ? "bg-success" : "bg-destructive"
                             )}
                           />
                           <span className="text-xs capitalize text-muted-foreground">
-                            {p.month.replace("-", " · ")}
+                            {p.period.replace("-", " · ")}
                           </span>
                         </div>
                         <span className="text-xs font-semibold text-foreground">

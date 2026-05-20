@@ -1,80 +1,175 @@
-import { mockFetch, simulateDelay } from "./base.service";
-import { MOCK_PAYMENTS } from "@/mock/payments";
-import type { Payment, PaymentFilters } from "@/types/payment";
+import { api } from "@/lib/api-client";
+import type { Payment, PaymentFilters, PaymentStatus, PaymentMethod } from "@/types/payment";
 import type { ApiResponse } from "@/types";
 
-let _payments = [...MOCK_PAYMENTS];
+// ─── Enum mappers ────────────────────────────────────────────────────────────
 
-function applyFilters(data: Payment[], filters?: PaymentFilters): Payment[] {
-  let result = [...data];
+const PAYMENT_STATUS_TO_BACKEND: Record<string, string> = {
+  paid: "PAGADO",
+  pending: "PENDIENTE",
+  overdue: "VENCIDO",
+  partial: "PARCIAL",
+  cancelled: "CANCELADO",
+};
 
-  if (filters?.search) {
-    const q = filters.search.toLowerCase();
-    result = result.filter(
-      (p) =>
-        p.concept.toLowerCase().includes(q) ||
-        p.tenantId.toLowerCase().includes(q) ||
-        p.propertyId.toLowerCase().includes(q) ||
-        p.contractId.toLowerCase().includes(q) ||
-        (p.reference?.toLowerCase().includes(q) ?? false)
-    );
-  }
+const PAYMENT_STATUS_FROM_BACKEND: Record<string, PaymentStatus> = {
+  PAGADO: "paid",
+  PENDIENTE: "pending",
+  VENCIDO: "overdue",
+  PARCIAL: "partial",
+  CANCELADO: "cancelled",
+};
 
-  if (filters?.status && filters.status !== "all") {
-    result = result.filter((p) => p.status === filters.status);
-  }
+const PAYMENT_METHOD_TO_BACKEND: Record<string, string> = {
+  transfer: "TRANSFERENCIA",
+  cash: "EFECTIVO",
+  card: "TARJETA",
+  auto_debit: "DEBITO_AUTOMATICO",
+};
 
-  if (filters?.period) {
-    result = result.filter((p) => p.period === filters.period);
-  }
+const PAYMENT_METHOD_FROM_BACKEND: Record<string, PaymentMethod> = {
+  TRANSFERENCIA: "transfer",
+  EFECTIVO: "cash",
+  TARJETA: "card",
+  DEBITO_AUTOMATICO: "auto_debit",
+};
 
-  if (filters?.tenantId) {
-    result = result.filter((p) => p.tenantId === filters.tenantId);
-  }
+// ─── Backend DTO shape ───────────────────────────────────────────────────────
 
-  return result.sort((a, b) => {
-    // Overdue first, then pending, then paid, then others
-    const order: Record<string, number> = { overdue: 0, pending: 1, partial: 2, paid: 3, cancelled: 4 };
-    const ao = order[a.status] ?? 5;
-    const bo = order[b.status] ?? 5;
-    if (ao !== bo) return ao - bo;
-    return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime();
-  });
+interface BackendPayment {
+  id: string;
+  contractId: string;
+  tenantId: string;
+  propertyId: string;
+  periodo: string;
+  concepto?: string;
+  monto: number;
+  totalPagado?: number;
+  fechaVencimiento: string;
+  fechaPago?: string;
+  estado: string;
+  metodoPago?: string;
+  referenciaPago?: string;
+  mora?: number;
+  observaciones?: string;
+  createdAt: string;
 }
+
+interface BackendPaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+// ─── Mapper ──────────────────────────────────────────────────────────────────
+
+function fromBackend(raw: BackendPayment): Payment {
+  return {
+    id: raw.id,
+    contractId: raw.contractId,
+    tenantId: raw.tenantId,
+    propertyId: raw.propertyId,
+    period: raw.periodo,
+    concept: raw.concepto ?? raw.periodo,
+    amount: Number(raw.monto),
+    paidAmount: raw.totalPagado != null ? Number(raw.totalPagado) : undefined,
+    dueDate: raw.fechaVencimiento,
+    paidDate: raw.fechaPago,
+    status: PAYMENT_STATUS_FROM_BACKEND[raw.estado] ?? "pending",
+    method: raw.metodoPago ? PAYMENT_METHOD_FROM_BACKEND[raw.metodoPago] : undefined,
+    reference: raw.referenciaPago,
+    lateFee: raw.mora,
+    notes: raw.observaciones,
+    createdAt: raw.createdAt,
+  };
+}
+
+function buildQuery(filters?: PaymentFilters): string {
+  const params = new URLSearchParams();
+  if (filters?.search) params.set("search", filters.search);
+  if (filters?.status && filters.status !== "all") {
+    params.set("estado", PAYMENT_STATUS_TO_BACKEND[filters.status] ?? filters.status);
+  }
+  if (filters?.tenantId) params.set("tenantId", filters.tenantId);
+  if (filters?.period) params.set("search", filters.period);
+  params.set("limit", "100");
+  params.set("sortBy", "fechaVencimiento");
+  params.set("sortOrder", "desc");
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
+}
+
+// ─── Service ──────────────────────────────────────────────────────────────────
 
 export const paymentsService = {
   async getAll(filters?: PaymentFilters): Promise<ApiResponse<Payment[]>> {
-    const data = await mockFetch(_payments);
-    const filtered = applyFilters(data, filters);
-    return { data: filtered, total: filtered.length };
+    const qs = buildQuery(filters);
+    const res = await api.get<BackendPaginatedResponse<BackendPayment>>(`/payments${qs}`);
+    const items = (res.items ?? []).map(fromBackend);
+    // Sort client-side: overdue → pending → partial → paid → cancelled
+    const order: Record<string, number> = { overdue: 0, pending: 1, partial: 2, paid: 3, cancelled: 4 };
+    items.sort((a, b) => {
+      const ao = order[a.status] ?? 5;
+      const bo = order[b.status] ?? 5;
+      if (ao !== bo) return ao - bo;
+      return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime();
+    });
+    return { data: items, total: res.total ?? items.length };
   },
 
   async getById(id: string): Promise<Payment | null> {
-    await simulateDelay(300);
-    return _payments.find((p) => p.id === id) ?? null;
+    try {
+      const raw = await api.get<BackendPayment>(`/payments/${id}`);
+      return fromBackend(raw);
+    } catch {
+      return null;
+    }
   },
 
   async create(payload: Omit<Payment, "id" | "createdAt">): Promise<Payment> {
-    await simulateDelay(700);
-    const newPayment: Payment = {
-      ...payload,
-      id: `pay-${String(Date.now()).slice(-6)}`,
-      createdAt: new Date().toISOString(),
+    const body = {
+      contractId: payload.contractId,
+      periodo: payload.period,
+      fechaVencimiento: payload.dueDate,
+      monto: payload.amount,
+      mora: payload.lateFee,
+      totalPagado: payload.paidAmount,
+      metodoPago: payload.method ? PAYMENT_METHOD_TO_BACKEND[payload.method] : undefined,
+      referenciaPago: payload.reference,
+      estado: payload.status ? PAYMENT_STATUS_TO_BACKEND[payload.status] : "PENDIENTE",
+      observaciones: payload.notes,
+      ...(payload.paidDate ? { fechaPago: payload.paidDate } : {}),
     };
-    _payments = [newPayment, ..._payments];
-    return newPayment;
+    const raw = await api.post<BackendPayment>("/payments", body);
+    return fromBackend(raw);
   },
 
+  // Maps to PATCH /payments/:id/pay for registering payment details.
   async update(id: string, payload: Partial<Payment>): Promise<Payment> {
-    await simulateDelay(600);
-    const idx = _payments.findIndex((p) => p.id === id);
-    if (idx === -1) throw new Error(`Payment ${id} not found`);
-    _payments[idx] = { ..._payments[idx], ...payload };
-    return _payments[idx];
+    const body: Record<string, unknown> = {};
+    if (payload.method) body.metodoPago = PAYMENT_METHOD_TO_BACKEND[payload.method];
+    if (payload.paidAmount !== undefined) body.totalPagado = payload.paidAmount;
+    if (payload.lateFee !== undefined) body.mora = payload.lateFee;
+    if (payload.reference) body.referenciaPago = payload.reference;
+    if (payload.paidDate) body.fechaPago = payload.paidDate;
+    if (payload.notes) body.observaciones = payload.notes;
+
+    const raw = await api.patch<BackendPayment>(`/payments/${id}`, body);
+    return fromBackend(raw);
+  },
+
+  async markOverdue(id: string): Promise<Payment> {
+    const raw = await api.patch<BackendPayment>(`/payments/${id}/overdue`);
+    return fromBackend(raw);
   },
 
   async delete(id: string): Promise<void> {
-    await simulateDelay(500);
-    _payments = _payments.filter((p) => p.id !== id);
+    await api.delete(`/payments/${id}`);
+  },
+
+  async getStats() {
+    return api.get<Record<string, unknown>>("/payments/stats/overview");
   },
 };

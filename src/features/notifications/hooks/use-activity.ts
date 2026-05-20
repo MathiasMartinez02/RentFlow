@@ -1,27 +1,38 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { MOCK_ACTIVITY } from "../mock/activity.mock";
-import type { ActivityCategory } from "../types";
+import { useMemo, useState, useEffect } from "react";
+import { activityService } from "@/services/activity.service";
+import type { ActivityEvent, ActivityCategory } from "../types";
 import { groupByDate } from "../utils/time.utils";
 
 export type ActivityFilter = "all" | ActivityCategory;
 
 export function useActivity(initialFilter: ActivityFilter = "all") {
+  const [allEvents, setAllEvents] = useState<ActivityEvent[]>([]);
   const [filter, setFilter] = useState<ActivityFilter>(initialFilter);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const filtered = useMemo(() => {
-    if (filter === "all") return MOCK_ACTIVITY;
-    return MOCK_ACTIVITY.filter((e) => e.category === filter);
-  }, [filter]);
+  useEffect(() => {
+    setIsLoading(true);
+    activityService
+      .getAll({ limit: 100 })
+      .then((events) => setAllEvents(events))
+      .catch(() => {})
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  const filtered = useMemo<ActivityEvent[]>(() => {
+    if (filter === "all") return allEvents;
+    return allEvents.filter((e) => e.category === filter);
+  }, [allEvents, filter]);
 
   const grouped = useMemo(() => groupByDate(filtered), [filtered]);
 
-  const totalCount = MOCK_ACTIVITY.length;
+  const totalCount = allEvents.length;
   const todayCount = useMemo(() => {
-    const today = "2026-05-19";
-    return MOCK_ACTIVITY.filter((e) => e.createdAt.startsWith(today)).length;
-  }, []);
+    const today = new Date().toISOString().slice(0, 10);
+    return allEvents.filter((e) => e.createdAt.startsWith(today)).length;
+  }, [allEvents]);
 
   return {
     events: filtered,
@@ -30,5 +41,6 @@ export function useActivity(initialFilter: ActivityFilter = "all") {
     setFilter,
     totalCount,
     todayCount,
+    isLoading,
   };
 }

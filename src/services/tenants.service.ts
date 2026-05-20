@@ -1,68 +1,128 @@
-import { mockFetch, simulateDelay } from "./base.service";
-import { MOCK_TENANTS } from "@/mock/tenants";
-import type { Tenant, TenantFilters } from "@/types/tenant";
+import { api } from "@/lib/api-client";
+import type { Tenant, TenantFilters, TenantStatus } from "@/types/tenant";
 import type { ApiResponse } from "@/types";
 
-let _tenants = [...MOCK_TENANTS];
+// ─── Enum mappers ────────────────────────────────────────────────────────────
 
-function applyFilters(data: Tenant[], filters?: TenantFilters): Tenant[] {
-  let result = [...data];
+const TENANT_STATUS_TO_BACKEND: Record<string, string> = {
+  active: "ACTIVO",
+  inactive: "INACTIVO",
+  pending: "PENDIENTE",
+  moroso: "MOROSO",
+};
 
-  if (filters?.search) {
-    const q = filters.search.toLowerCase();
-    result = result.filter(
-      (t) =>
-        t.firstName.toLowerCase().includes(q) ||
-        t.lastName.toLowerCase().includes(q) ||
-        t.email.toLowerCase().includes(q) ||
-        t.phone.includes(q) ||
-        t.nationalId.toLowerCase().includes(q)
-    );
-  }
-  if (filters?.status && filters.status !== "all") {
-    result = result.filter((t) => t.status === filters.status);
-  }
-  if (filters?.paymentStatus && filters.paymentStatus !== "all") {
-    result = result.filter((t) => t.paymentStatus === filters.paymentStatus);
-  }
+const TENANT_STATUS_FROM_BACKEND: Record<string, TenantStatus> = {
+  ACTIVO: "active",
+  INACTIVO: "inactive",
+  PENDIENTE: "pending",
+  MOROSO: "active", // displayed as active but payment is overdue
+};
 
-  return result;
+// ─── Backend DTO shape ───────────────────────────────────────────────────────
+
+interface BackendTenant {
+  id: string;
+  nombre: string;
+  apellido: string;
+  email: string;
+  telefono: string;
+  dni: string;
+  estado: string;
+  direccion?: string;
+  fechaNacimiento?: string;
+  observaciones?: string;
+  propertyId?: string;
+  createdAt: string;
+  updatedAt: string;
 }
+
+interface BackendPaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+// ─── Mapper ──────────────────────────────────────────────────────────────────
+
+function fromBackend(raw: BackendTenant): Tenant {
+  return {
+    id: raw.id,
+    firstName: raw.nombre,
+    lastName: raw.apellido,
+    email: raw.email,
+    phone: raw.telefono,
+    nationalId: raw.dni,
+    status: TENANT_STATUS_FROM_BACKEND[raw.estado] ?? "pending",
+    address: raw.direccion,
+    observations: raw.observaciones,
+    propertyId: raw.propertyId,
+    emergencyContact: { name: "", phone: "", relationship: "" },
+    createdAt: raw.createdAt,
+    updatedAt: raw.updatedAt,
+  };
+}
+
+function toPayload(data: Partial<Tenant>) {
+  return {
+    nombre: data.firstName,
+    apellido: data.lastName,
+    email: data.email,
+    telefono: data.phone,
+    dni: data.nationalId,
+    estado: data.status ? TENANT_STATUS_TO_BACKEND[data.status] : undefined,
+    direccion: data.address,
+    observaciones: data.observations,
+    propertyId: data.propertyId || undefined,
+  };
+}
+
+function buildQuery(filters?: TenantFilters): string {
+  const params = new URLSearchParams();
+  if (filters?.search) params.set("search", filters.search);
+  if (filters?.status && filters.status !== "all") {
+    params.set("estado", TENANT_STATUS_TO_BACKEND[filters.status] ?? filters.status);
+  }
+  params.set("limit", "100");
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
+}
+
+// ─── Service ──────────────────────────────────────────────────────────────────
 
 export const tenantsService = {
   async getAll(filters?: TenantFilters): Promise<ApiResponse<Tenant[]>> {
-    const data = await mockFetch(_tenants);
-    const filtered = applyFilters(data, filters);
-    return { data: filtered, total: filtered.length };
+    const qs = buildQuery(filters);
+    const res = await api.get<BackendPaginatedResponse<BackendTenant>>(`/tenants${qs}`);
+    const items = (res.items ?? []).map(fromBackend);
+    return { data: items, total: res.total ?? items.length };
   },
 
   async getById(id: string): Promise<Tenant | null> {
-    await simulateDelay(300);
-    return _tenants.find((t) => t.id === id) ?? null;
+    try {
+      const raw = await api.get<BackendTenant>(`/tenants/${id}`);
+      return fromBackend(raw);
+    } catch {
+      return null;
+    }
   },
 
   async create(payload: Omit<Tenant, "id" | "createdAt" | "updatedAt">): Promise<Tenant> {
-    await simulateDelay(700);
-    const newTenant: Tenant = {
-      ...payload,
-      id: `ten-${String(Date.now()).slice(-6)}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    _tenants = [newTenant, ..._tenants];
-    return newTenant;
+    const raw = await api.post<BackendTenant>("/tenants", toPayload(payload as Tenant));
+    return fromBackend(raw);
   },
 
   async update(id: string, payload: Partial<Tenant>): Promise<Tenant> {
-    await simulateDelay(600);
-    const idx = _tenants.findIndex((t) => t.id === id);
-    if (idx === -1) throw new Error(`Tenant ${id} not found`);
-    _tenants[idx] = { ..._tenants[idx], ...payload, updatedAt: new Date().toISOString() };
-    return _tenants[idx];
+    const raw = await api.patch<BackendTenant>(`/tenants/${id}`, toPayload(payload));
+    return fromBackend(raw);
   },
 
   async delete(id: string): Promise<void> {
-    await simulateDelay(500);
-    _tenants = _tenants.filter((t) => t.id !== id);
+    await api.delete(`/tenants/${id}`);
+  },
+
+  async getStats() {
+    return api.get<Record<string, number>>("/tenants/stats/overview");
   },
 };

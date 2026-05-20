@@ -26,8 +26,7 @@ import {
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { formatCurrency, formatDate } from "@/shared/utils/format";
-import { MOCK_PROPERTIES } from "@/mock/properties";
-import { MOCK_TECHNICIANS } from "@/mock/maintenance";
+import { useCatalogStore } from "@/store/catalog.store";
 import type { MaintenanceTicket } from "@/types/maintenance";
 
 const STATUS_CONFIG = {
@@ -80,14 +79,12 @@ interface MaintenanceTableProps {
 export function MaintenanceTable({ tickets, isLoading, onView, onEdit, onDelete }: MaintenanceTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
 
+  const allProperties = useCatalogStore((s) => s.properties);
   const propertyMap = useMemo(
-    () => new Map(MOCK_PROPERTIES.map((p) => [p.id, p])),
-    []
+    () => new Map(allProperties.map((p) => [p.id, p])),
+    [allProperties]
   );
-  const technicianMap = useMemo(
-    () => new Map(MOCK_TECHNICIANS.map((t) => [t.id, t])),
-    []
-  );
+  const technicianMap = new Map(); // no separate technicians endpoint
 
   const columns: ColumnDef<MaintenanceTicket>[] = useMemo(
     () => [

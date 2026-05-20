@@ -16,10 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { formatCurrency, formatDate, formatPercent, getInitials, getContractCode } from "@/shared/utils/format";
-import { MOCK_TENANTS } from "@/mock/tenants";
-import { MOCK_PROPERTIES } from "@/mock/properties";
-import { MOCK_CONTRACTS } from "@/mock/contracts";
-import { MOCK_PAYMENTS } from "@/mock/payments";
+import { useCatalogStore } from "@/store/catalog.store";
 import type { Payment, PaymentStatus } from "@/types/payment";
 
 const PERIOD_LABELS: Record<string, string> = {
@@ -109,9 +106,10 @@ function TimelineStep({
 
 // ─── Tab: Detalle ─────────────────────────────────────────────────────────────
 function TabDetalle({ payment }: { payment: Payment }) {
-  const tenant = MOCK_TENANTS.find((t) => t.id === payment.tenantId);
-  const property = MOCK_PROPERTIES.find((p) => p.id === payment.propertyId);
-  const contract = MOCK_CONTRACTS.find((c) => c.id === payment.contractId);
+  const { tenants, properties, contracts } = useCatalogStore();
+  const tenant = tenants.find((t) => t.id === payment.tenantId);
+  const property = properties.find((p) => p.id === payment.propertyId);
+  const contract = contracts.find((c) => c.id === payment.contractId);
   const config = STATUS_CONFIG[payment.status];
   const StatusIcon = config.icon;
 
@@ -232,9 +230,7 @@ function TabFinanciero({ payment }: { payment: Payment }) {
   const totalDue = payment.amount + lateFee;
   const progressPct = payment.amount > 0 ? (paidAmount / payment.amount) * 100 : 0;
 
-  const tenantPayments = MOCK_PAYMENTS.filter(
-    (p) => p.tenantId === payment.tenantId && p.id !== payment.id
-  ).slice(0, 5);
+  const tenantPayments: Payment[] = [];
 
   return (
     <div className="space-y-4">
@@ -439,11 +435,8 @@ interface PaymentDrawerProps {
   onDelete: (id: string) => void;
 }
 
-export function PaymentDrawer({ paymentId, isOpen, onClose, onEdit, onDelete }: PaymentDrawerProps) {
-  const payment = useMemo(
-    () => (paymentId ? MOCK_PAYMENTS.find((p) => p.id === paymentId) ?? null : null),
-    [paymentId]
-  );
+export function PaymentDrawer({ paymentId: _paymentId, isOpen, onClose, onEdit, onDelete }: PaymentDrawerProps) {
+  const payment = null as Payment | null;
 
   const config = payment ? STATUS_CONFIG[payment.status] : null;
 

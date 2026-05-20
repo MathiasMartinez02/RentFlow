@@ -24,10 +24,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { formatCurrency, formatDate, formatPercent, getInitials } from "@/shared/utils/format";
-import { MOCK_PROPERTIES } from "@/mock/properties";
-import { MOCK_TENANTS } from "@/mock/tenants";
-import { MOCK_CONTRACTS } from "@/mock/contracts";
-import { MOCK_DASHBOARD_DATA } from "@/mock/dashboard";
+import { useCatalogStore } from "@/store/catalog.store";
 import type { Property } from "@/types/property";
 
 const STATUS_BADGE: Record<
@@ -88,18 +85,13 @@ function DrawerContent({
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
 }) {
-  const prop = MOCK_PROPERTIES.find((p) => p.id === propertyId);
-  const tenant = prop?.tenantId ? MOCK_TENANTS.find((t) => t.id === prop.tenantId) : null;
+  const { properties, tenants, contracts } = useCatalogStore();
+  const prop = properties.find((p) => p.id === propertyId);
+  const tenant = prop?.tenantId ? tenants.find((t) => t.id === prop.tenantId) : null;
   const contract = prop?.contractId
-    ? MOCK_CONTRACTS.find((c) => c.id === prop.contractId)
+    ? contracts.find((c) => c.id === prop.contractId)
     : null;
-  const activity = useMemo(
-    () =>
-      MOCK_DASHBOARD_DATA.recentActivity.filter(
-        (a) => a.entityId === propertyId || (tenant && a.entityId === tenant.id)
-      ),
-    [propertyId, tenant]
-  );
+  const activity: { id: string; title: string; description: string; timestamp: string }[] = [];
 
   if (!prop) return null;
 

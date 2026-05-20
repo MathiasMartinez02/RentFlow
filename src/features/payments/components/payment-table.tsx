@@ -28,8 +28,7 @@ import {
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { formatCurrency, formatDate, getInitials } from "@/shared/utils/format";
-import { MOCK_PROPERTIES } from "@/mock/properties";
-import { MOCK_TENANTS } from "@/mock/tenants";
+import { useCatalogStore } from "@/store/catalog.store";
 import type { Payment, PaymentStatus } from "@/types/payment";
 
 const PERIOD_LABELS: Record<string, string> = {
@@ -97,8 +96,9 @@ interface PaymentTableProps {
 export function PaymentTable({ payments, isLoading, onView, onEdit, onDelete }: PaymentTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
 
-  const propertyMap = useMemo(() => new Map(MOCK_PROPERTIES.map((p) => [p.id, p])), []);
-  const tenantMap = useMemo(() => new Map(MOCK_TENANTS.map((t) => [t.id, t])), []);
+  const { properties, tenants } = useCatalogStore();
+  const propertyMap = useMemo(() => new Map(properties.map((p) => [p.id, p])), [properties]);
+  const tenantMap = useMemo(() => new Map(tenants.map((t) => [t.id, t])), [tenants]);
 
   const columns: ColumnDef<Payment>[] = useMemo(
     () => [

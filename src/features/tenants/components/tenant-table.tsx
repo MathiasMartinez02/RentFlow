@@ -35,7 +35,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getInitials, formatDate } from "@/shared/utils/format";
-import { MOCK_PROPERTIES } from "@/mock/properties";
+import { useCatalogStore } from "@/store/catalog.store";
 import type { Tenant } from "@/types/tenant";
 
 const STATUS_BADGE: Record<
@@ -91,10 +91,11 @@ interface TenantTableProps {
 
 export function TenantTable({ tenants, isLoading, onView, onEdit, onDelete }: TenantTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
+  const allProperties = useCatalogStore((s) => s.properties);
 
   const propertyMap = useMemo(
-    () => new Map(MOCK_PROPERTIES.map((p) => [p.id, p])),
-    []
+    () => new Map(allProperties.map((p) => [p.id, p])),
+    [allProperties]
   );
 
   const columns: ColumnDef<Tenant>[] = useMemo(

@@ -8,8 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { formatCurrency, formatDate, getInitials } from "@/shared/utils/format";
-import { MOCK_TENANTS } from "@/mock/tenants";
-import { MOCK_PROPERTIES } from "@/mock/properties";
+import { useCatalogStore } from "@/store/catalog.store";
 import type { Payment } from "@/types/payment";
 
 function getDaysOverdue(dueDate: string): number {
@@ -27,8 +26,9 @@ interface UpcomingItemProps {
 }
 
 function UpcomingItem({ payment, onView, index }: UpcomingItemProps) {
-  const tenant = MOCK_TENANTS.find((t) => t.id === payment.tenantId);
-  const property = MOCK_PROPERTIES.find((p) => p.id === payment.propertyId);
+  const { tenants, properties } = useCatalogStore();
+  const tenant = tenants.find((t) => t.id === payment.tenantId);
+  const property = properties.find((p) => p.id === payment.propertyId);
   const isOverdue = payment.status === "overdue";
   const daysOverdue = isOverdue ? getDaysOverdue(payment.dueDate) : null;
   const daysUntil = !isOverdue ? getDaysUntilDue(payment.dueDate) : null;

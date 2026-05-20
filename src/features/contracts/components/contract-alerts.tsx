@@ -5,8 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { formatDate, getDaysUntilDate } from "@/shared/utils/format";
-import { MOCK_PROPERTIES } from "@/mock/properties";
-import { MOCK_TENANTS } from "@/mock/tenants";
+import { useCatalogStore } from "@/store/catalog.store";
 import type { Contract } from "@/types/contract";
 import { isExpiringSoon, getDaysLeft } from "../hooks/use-contracts";
 
@@ -47,6 +46,7 @@ function getUrgencyConfig(daysLeft: number) {
 }
 
 export function ContractAlerts({ contracts, onView }: ContractAlertsProps) {
+  const { properties, tenants } = useCatalogStore();
   const expiring = contracts
     .filter(isExpiringSoon)
     .sort((a, b) => getDaysLeft(a.endDate) - getDaysLeft(b.endDate));
@@ -84,8 +84,8 @@ export function ContractAlerts({ contracts, onView }: ContractAlertsProps) {
           {expiring.map((contract) => {
             const daysLeft = getDaysLeft(contract.endDate);
             const config = getUrgencyConfig(daysLeft);
-            const property = MOCK_PROPERTIES.find((p) => p.id === contract.propertyId);
-            const tenant = MOCK_TENANTS.find((t) => t.id === contract.tenantId);
+            const property = properties.find((p) => p.id === contract.propertyId);
+            const tenant = tenants.find((t) => t.id === contract.tenantId);
 
             return (
               <motion.div

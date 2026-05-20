@@ -1,78 +1,136 @@
-import { mockFetch, simulateDelay } from "./base.service";
-import { MOCK_CONTRACTS } from "@/mock/contracts";
-import type { Contract, ContractFilters } from "@/types/contract";
+import { api } from "@/lib/api-client";
+import type { Contract, ContractFilters, ContractStatus } from "@/types/contract";
 import type { ApiResponse } from "@/types";
 
-let _contracts = [...MOCK_CONTRACTS];
+// ─── Enum mappers ────────────────────────────────────────────────────────────
 
-const EXPIRING_SOON_DAYS = 90;
+const CONTRACT_STATUS_TO_BACKEND: Record<string, string> = {
+  active: "ACTIVO",
+  expired: "VENCIDO",
+  pending: "ACTIVO",
+  terminated: "CANCELADO",
+};
 
-function isExpiringSoon(contract: Contract): boolean {
-  if (contract.status !== "active") return false;
-  const daysLeft = Math.ceil(
-    (new Date(contract.endDate).getTime() - Date.now()) / 86400000
-  );
-  return daysLeft > 0 && daysLeft <= EXPIRING_SOON_DAYS;
+const CONTRACT_STATUS_FROM_BACKEND: Record<string, ContractStatus> = {
+  ACTIVO: "active",
+  PROXIMO_A_VENCER: "active", // still active; isExpiringSoon() handles the expiry detection
+  VENCIDO: "expired",
+  CANCELADO: "terminated",
+  RENOVADO: "active",
+};
+
+// ─── Backend DTO shape ───────────────────────────────────────────────────────
+
+interface BackendContract {
+  id: string;
+  propertyId: string;
+  tenantId: string;
+  fechaInicio: string;
+  fechaFin: string;
+  montoMensual: number;
+  deposito: number;
+  expensas?: number;
+  renovacionAutomatica: boolean;
+  estado: string;
+  observaciones?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-function applyFilters(data: Contract[], filters?: ContractFilters): Contract[] {
-  let result = [...data];
-
-  if (filters?.search) {
-    const q = filters.search.toLowerCase();
-    result = result.filter(
-      (c) =>
-        c.id.toLowerCase().includes(q) ||
-        c.propertyId.toLowerCase().includes(q) ||
-        c.tenantId.toLowerCase().includes(q)
-    );
-  }
-
-  if (filters?.status && filters.status !== "all") {
-    if (filters.status === "expiring_soon") {
-      result = result.filter(isExpiringSoon);
-    } else {
-      result = result.filter((c) => c.status === filters.status);
-    }
-  }
-
-  return result;
+interface BackendPaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
+
+// ─── Mapper ──────────────────────────────────────────────────────────────────
+
+function fromBackend(raw: BackendContract): Contract {
+  return {
+    id: raw.id,
+    propertyId: raw.propertyId,
+    tenantId: raw.tenantId,
+    startDate: raw.fechaInicio,
+    endDate: raw.fechaFin,
+    monthlyRent: Number(raw.montoMensual),
+    deposit: Number(raw.deposito),
+    expenses: raw.expensas != null ? Number(raw.expensas) : undefined,
+    renewalOption: raw.renovacionAutomatica ?? false,
+    noticePeriodDays: 30,
+    status: CONTRACT_STATUS_FROM_BACKEND[raw.estado] ?? "active",
+    terms: raw.observaciones,
+    createdAt: raw.createdAt,
+    updatedAt: raw.updatedAt,
+  };
+}
+
+function toPayload(data: Partial<Contract>) {
+  return {
+    propertyId: data.propertyId,
+    tenantId: data.tenantId,
+    fechaInicio: data.startDate,
+    fechaFin: data.endDate,
+    montoMensual: data.monthlyRent,
+    deposito: data.deposit,
+    expensas: data.expenses,
+    renovacionAutomatica: data.renewalOption,
+    estado: data.status ? CONTRACT_STATUS_TO_BACKEND[data.status] : undefined,
+    observaciones: data.terms,
+  };
+}
+
+function buildQuery(filters?: ContractFilters): string {
+  const params = new URLSearchParams();
+  if (filters?.search) params.set("search", filters.search);
+  if (filters?.status && filters.status !== "all" && filters.status !== "expiring_soon") {
+    params.set("estado", CONTRACT_STATUS_TO_BACKEND[filters.status] ?? filters.status);
+  }
+  params.set("limit", "100");
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
+}
+
+// ─── Service ──────────────────────────────────────────────────────────────────
 
 export const contractsService = {
   async getAll(filters?: ContractFilters): Promise<ApiResponse<Contract[]>> {
-    const data = await mockFetch(_contracts);
-    const filtered = applyFilters(data, filters);
-    return { data: filtered, total: filtered.length };
+    const qs = buildQuery(filters);
+    const res = await api.get<BackendPaginatedResponse<BackendContract>>(`/contracts${qs}`);
+    const items = (res.items ?? []).map(fromBackend);
+    return { data: items, total: res.total ?? items.length };
   },
 
   async getById(id: string): Promise<Contract | null> {
-    await simulateDelay(300);
-    return _contracts.find((c) => c.id === id) ?? null;
+    try {
+      const raw = await api.get<BackendContract>(`/contracts/${id}`);
+      return fromBackend(raw);
+    } catch {
+      return null;
+    }
   },
 
   async create(payload: Omit<Contract, "id" | "createdAt" | "updatedAt">): Promise<Contract> {
-    await simulateDelay(700);
-    const newContract: Contract = {
-      ...payload,
-      id: `con-${String(Date.now()).slice(-6)}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    _contracts = [newContract, ..._contracts];
-    return newContract;
+    const raw = await api.post<BackendContract>("/contracts", toPayload(payload as Contract));
+    return fromBackend(raw);
   },
 
   async update(id: string, payload: Partial<Contract>): Promise<Contract> {
-    await simulateDelay(600);
-    const idx = _contracts.findIndex((c) => c.id === id);
-    if (idx === -1) throw new Error(`Contract ${id} not found`);
-    _contracts[idx] = { ..._contracts[idx], ...payload, updatedAt: new Date().toISOString() };
-    return _contracts[idx];
+    const raw = await api.patch<BackendContract>(`/contracts/${id}`, toPayload(payload));
+    return fromBackend(raw);
   },
 
   async delete(id: string): Promise<void> {
-    await simulateDelay(500);
-    _contracts = _contracts.filter((c) => c.id !== id);
+    await api.delete(`/contracts/${id}`);
+  },
+
+  async renew(id: string): Promise<Contract> {
+    const raw = await api.post<BackendContract>(`/contracts/${id}/renew`);
+    return fromBackend(raw);
+  },
+
+  async getStats() {
+    return api.get<Record<string, number>>("/contracts/stats/overview");
   },
 };

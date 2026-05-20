@@ -15,9 +15,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { MOCK_MAINTENANCE, MOCK_TECHNICIANS } from "@/mock/maintenance";
-import { MOCK_PROPERTIES } from "@/mock/properties";
-import { MOCK_TENANTS } from "@/mock/tenants";
+import { useCatalogStore } from "@/store/catalog.store";
 import {
   maintenanceSchema,
   DEFAULT_MAINTENANCE_VALUES,
@@ -47,9 +45,11 @@ interface MaintenanceFormProps {
 }
 
 export function MaintenanceForm({ isOpen, editingId, isMutating, onSubmit, onClose }: MaintenanceFormProps) {
+  const { properties: allProperties, tenants: allTenants, tickets: allTickets } = useCatalogStore();
+
   const editingTicket = useMemo(
-    () => (editingId ? MOCK_MAINTENANCE.find((t) => t.id === editingId) : null),
-    [editingId]
+    () => (editingId ? allTickets.find((t) => t.id === editingId) : null),
+    [editingId, allTickets]
   );
 
   const defaultValues: MaintenanceFormValues = useMemo(() => {
@@ -190,7 +190,7 @@ export function MaintenanceForm({ isOpen, editingId, isMutating, onSubmit, onClo
                           <SelectValue placeholder="Seleccionar propiedad" />
                         </SelectTrigger>
                         <SelectContent>
-                          {MOCK_PROPERTIES.map((p) => (
+                          {allProperties.map((p) => (
                             <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                           ))}
                         </SelectContent>
@@ -215,7 +215,7 @@ export function MaintenanceForm({ isOpen, editingId, isMutating, onSubmit, onClo
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="__none__">Sin inquilino</SelectItem>
-                          {MOCK_TENANTS.filter((t) => t.status === "active").map((t) => (
+                          {allTenants.filter((t) => t.status === "active").map((t) => (
                             <SelectItem key={t.id} value={t.id}>
                               {t.firstName} {t.lastName}
                             </SelectItem>
@@ -282,11 +282,7 @@ export function MaintenanceForm({ isOpen, editingId, isMutating, onSubmit, onClo
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="__none__">Sin asignar</SelectItem>
-                          {MOCK_TECHNICIANS.map((t) => (
-                            <SelectItem key={t.id} value={t.id}>
-                              {t.name} — {t.specialty}
-                            </SelectItem>
-                          ))}
+                          {/* Technicians list comes from backend assignedTo field; currently no separate endpoint */}
                         </SelectContent>
                       </Select>
                     )}

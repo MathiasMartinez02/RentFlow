@@ -24,8 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MOCK_TENANTS } from "@/mock/tenants";
-import { MOCK_PROPERTIES } from "@/mock/properties";
+import { useCatalogStore } from "@/store/catalog.store";
 import {
   tenantSchema,
   DEFAULT_TENANT_VALUES,
@@ -57,19 +56,21 @@ interface TenantFormProps {
 }
 
 export function TenantForm({ isOpen, editingId, isMutating, onSubmit, onClose }: TenantFormProps) {
+  const { tenants: allTenants, properties: allProperties } = useCatalogStore();
+
   const editingTenant = useMemo(
-    () => (editingId ? MOCK_TENANTS.find((t) => t.id === editingId) : null),
-    [editingId]
+    () => (editingId ? allTenants.find((t) => t.id === editingId) : null),
+    [editingId, allTenants]
   );
 
   const availableProperties = useMemo(
     () =>
-      MOCK_PROPERTIES.filter(
+      allProperties.filter(
         (p) =>
           p.status === "available" ||
           (editingTenant?.propertyId && p.id === editingTenant.propertyId)
       ),
-    [editingTenant]
+    [editingTenant, allProperties]
   );
 
   const defaultValues: TenantFormValues = useMemo(() => {

@@ -7,8 +7,7 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useUIStore } from "@/store";
-import { MOCK_TENANTS } from "@/mock/tenants";
-import { MOCK_CONTRACTS } from "@/mock/contracts";
+import { useCatalogStore } from "@/store/catalog.store";
 import { useProperties } from "./hooks/use-properties";
 import { usePropertyFilters } from "./hooks/use-property-filters";
 import { PropertyStatsBar } from "./components/property-stats";
@@ -39,9 +38,12 @@ export function PropertiesView() {
   const { properties, stats, isLoading, isMutating, refetch, createProperty, updateProperty, deleteProperty } =
     useProperties(filters);
 
+  const allTenants = useCatalogStore((s) => s.tenants);
+  const allContracts = useCatalogStore((s) => s.contracts);
+
   const tenantMap = useMemo(
-    () => new Map(MOCK_TENANTS.map((t) => [t.id, t])),
-    []
+    () => new Map(allTenants.map((t) => [t.id, t])),
+    [allTenants]
   );
 
   const handleSubmit = async (data: Parameters<typeof createProperty>[0]) => {
@@ -166,8 +168,8 @@ export function PropertiesView() {
             >
               <PropertyTable
                 properties={properties}
-                tenants={MOCK_TENANTS}
-                contracts={MOCK_CONTRACTS}
+                tenants={allTenants}
+                contracts={allContracts}
                 isLoading={isLoading}
                 onView={openPropertyDrawer}
                 onEdit={openPropertyForm}

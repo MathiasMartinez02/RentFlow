@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Building2 } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
+import { useCatalogStore } from "@/store/catalog.store";
 
 function AuthLoader() {
   return (
@@ -41,12 +42,19 @@ export function AuthGuard({ children }: AuthGuardProps) {
   const router = useRouter();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const _hasHydrated = useAuthStore((s) => s._hasHydrated);
+  const refreshCatalog = useCatalogStore((s) => s.refresh);
 
   useEffect(() => {
     if (_hasHydrated && !isAuthenticated) {
       router.replace("/login");
     }
   }, [_hasHydrated, isAuthenticated, router]);
+
+  useEffect(() => {
+    if (_hasHydrated && isAuthenticated) {
+      refreshCatalog();
+    }
+  }, [_hasHydrated, isAuthenticated, refreshCatalog]);
 
   if (!_hasHydrated || !isAuthenticated) {
     return <AuthLoader />;

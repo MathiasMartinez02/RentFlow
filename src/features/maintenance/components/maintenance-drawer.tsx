@@ -13,9 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { formatCurrency, formatDate } from "@/shared/utils/format";
-import { MOCK_MAINTENANCE, MOCK_TECHNICIANS } from "@/mock/maintenance";
-import { MOCK_PROPERTIES } from "@/mock/properties";
-import { MOCK_TENANTS } from "@/mock/tenants";
+import { useCatalogStore } from "@/store/catalog.store";
 
 const STATUS_CONFIG = {
   pending: { label: "Pendiente", icon: Clock, class: "bg-muted text-muted-foreground" },
@@ -73,12 +71,13 @@ function DrawerContent({
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
 }) {
-  const ticket = MOCK_MAINTENANCE.find((t) => t.id === ticketId);
+  const { tickets, properties, tenants } = useCatalogStore();
+  const ticket = tickets.find((t) => t.id === ticketId);
   if (!ticket) return null;
 
-  const property = MOCK_PROPERTIES.find((p) => p.id === ticket.propertyId);
-  const tenant = ticket.tenantId ? MOCK_TENANTS.find((t) => t.id === ticket.tenantId) : null;
-  const technician = ticket.assignedTo ? MOCK_TECHNICIANS.find((t) => t.id === ticket.assignedTo) : null;
+  const property = properties.find((p) => p.id === ticket.propertyId);
+  const tenant = ticket.tenantId ? tenants.find((t) => t.id === ticket.tenantId) : null;
+  const technician = null as unknown as { name: string; specialty: string; phone: string } | null;
   const statusCfg = STATUS_CONFIG[ticket.status];
   const priorityCfg = PRIORITY_CONFIG[ticket.priority];
   const StatusIcon = statusCfg.icon;

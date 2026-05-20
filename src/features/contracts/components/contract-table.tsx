@@ -37,8 +37,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { formatCurrency, formatDate, getInitials, getContractCode } from "@/shared/utils/format";
-import { MOCK_PROPERTIES } from "@/mock/properties";
-import { MOCK_TENANTS } from "@/mock/tenants";
+import { useCatalogStore } from "@/store/catalog.store";
 import type { Contract } from "@/types/contract";
 import { getDaysLeft, isExpiringSoon } from "../hooks/use-contracts";
 
@@ -93,9 +92,10 @@ interface ContractTableProps {
 
 export function ContractTable({ contracts, isLoading, onView, onEdit, onDelete }: ContractTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
+  const { properties, tenants } = useCatalogStore();
 
-  const propertyMap = useMemo(() => new Map(MOCK_PROPERTIES.map((p) => [p.id, p])), []);
-  const tenantMap = useMemo(() => new Map(MOCK_TENANTS.map((t) => [t.id, t])), []);
+  const propertyMap = useMemo(() => new Map(properties.map((p) => [p.id, p])), [properties]);
+  const tenantMap = useMemo(() => new Map(tenants.map((t) => [t.id, t])), [tenants]);
 
   const columns: ColumnDef<Contract>[] = useMemo(
     () => [

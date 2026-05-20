@@ -17,8 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { formatCurrency, formatDate } from "@/shared/utils/format";
-import { MOCK_PROPERTIES } from "@/mock/properties";
-import { MOCK_TECHNICIANS } from "@/mock/maintenance";
+import { useCatalogStore } from "@/store/catalog.store";
 import type { MaintenanceTicket, MaintenanceStatus } from "@/types/maintenance";
 
 const COLUMNS: { status: MaintenanceStatus; label: string; icon: React.ElementType; color: string }[] = [
@@ -54,8 +53,9 @@ interface KanbanCardProps {
 }
 
 function KanbanCard({ ticket, onView, onEdit, onDelete, onDragStart }: KanbanCardProps) {
-  const property = MOCK_PROPERTIES.find((p) => p.id === ticket.propertyId);
-  const technician = ticket.assignedTo ? MOCK_TECHNICIANS.find((t) => t.id === ticket.assignedTo) : null;
+  const allProperties = useCatalogStore((s) => s.properties);
+  const property = allProperties.find((p) => p.id === ticket.propertyId);
+  const technician = null as unknown as { name: string } | null;
   const priority = PRIORITY_CONFIG[ticket.priority];
   const isUrgent = ticket.priority === "urgent";
 

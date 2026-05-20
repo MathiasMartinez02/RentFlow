@@ -25,9 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { MOCK_CONTRACTS } from "@/mock/contracts";
-import { MOCK_PROPERTIES } from "@/mock/properties";
-import { MOCK_TENANTS } from "@/mock/tenants";
+import { useCatalogStore } from "@/store/catalog.store";
 import {
   contractSchema,
   DEFAULT_CONTRACT_VALUES,
@@ -59,9 +57,11 @@ interface ContractFormProps {
 }
 
 export function ContractForm({ isOpen, editingId, isMutating, onSubmit, onClose }: ContractFormProps) {
+  const { contracts: allContracts, properties: allProperties, tenants: allTenants } = useCatalogStore();
+
   const editingContract = useMemo(
-    () => (editingId ? MOCK_CONTRACTS.find((c) => c.id === editingId) : null),
-    [editingId]
+    () => (editingId ? allContracts.find((c) => c.id === editingId) : null),
+    [editingId, allContracts]
   );
 
   const defaultValues: ContractFormValues = useMemo(() => {
@@ -99,22 +99,18 @@ export function ContractForm({ isOpen, editingId, isMutating, onSubmit, onClose 
   }, [isOpen, editingId]);
 
   const occupiedPropertyIds = new Set(
-    MOCK_CONTRACTS.filter((c) => c.status === "active" && c.id !== editingId).map(
-      (c) => c.propertyId
-    )
+    allContracts.filter((c) => c.status === "active" && c.id !== editingId).map((c) => c.propertyId)
   );
 
-  const availableProperties = MOCK_PROPERTIES.filter(
+  const availableProperties = allProperties.filter(
     (p) => !occupiedPropertyIds.has(p.id) || p.id === editingContract?.propertyId
   );
 
   const activeTenantIds = new Set(
-    MOCK_CONTRACTS.filter((c) => c.status === "active" && c.id !== editingId).map(
-      (c) => c.tenantId
-    )
+    allContracts.filter((c) => c.status === "active" && c.id !== editingId).map((c) => c.tenantId)
   );
 
-  const availableTenants = MOCK_TENANTS.filter(
+  const availableTenants = allTenants.filter(
     (t) => !activeTenantIds.has(t.id) || t.id === editingContract?.tenantId
   );
 

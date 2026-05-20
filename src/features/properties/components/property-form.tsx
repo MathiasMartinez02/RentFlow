@@ -25,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MOCK_PROPERTIES } from "@/mock/properties";
+import { useCatalogStore } from "@/store/catalog.store";
 import { PROPERTY_AMENITIES } from "@/types/property";
 import {
   propertySchema,
@@ -64,9 +64,10 @@ export function PropertyForm({
   onSubmit,
   onClose,
 }: PropertyFormProps) {
+  const allProperties = useCatalogStore((s) => s.properties);
   const editingProperty = useMemo(
-    () => (editingId ? MOCK_PROPERTIES.find((p) => p.id === editingId) : null),
-    [editingId]
+    () => (editingId ? allProperties.find((p) => p.id === editingId) : null),
+    [editingId, allProperties]
   );
 
   const defaultValues: PropertyFormValues = useMemo(() => {

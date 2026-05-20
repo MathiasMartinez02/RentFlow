@@ -22,11 +22,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatCurrency, formatDate, getInitials } from "@/shared/utils/format";
-import { MOCK_TENANTS } from "@/mock/tenants";
-import { MOCK_CONTRACTS } from "@/mock/contracts";
-import { MOCK_PROPERTIES } from "@/mock/properties";
-import { MOCK_PAYMENT_HISTORY } from "@/mock/payments";
-import { MOCK_DASHBOARD_DATA } from "@/mock/dashboard";
+import { useCatalogStore } from "@/store/catalog.store";
 import type { Tenant } from "@/types/tenant";
 
 const STATUS_BADGE: Record<
@@ -97,24 +93,17 @@ function DrawerContent({
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
 }) {
-  const tenant = MOCK_TENANTS.find((t) => t.id === tenantId);
+  const { tenants, contracts, properties } = useCatalogStore();
+  const tenant = tenants.find((t) => t.id === tenantId);
   const contract = tenant?.contractId
-    ? MOCK_CONTRACTS.find((c) => c.id === tenant.contractId)
+    ? contracts.find((c) => c.id === tenant.contractId)
     : null;
   const property = tenant?.propertyId
-    ? MOCK_PROPERTIES.find((p) => p.id === tenant.propertyId)
+    ? properties.find((p) => p.id === tenant.propertyId)
     : null;
-  const payments = useMemo(
-    () =>
-      MOCK_PAYMENT_HISTORY.filter((p) => p.tenantId === tenantId).sort(
-        (a, b) => b.month.localeCompare(a.month)
-      ),
-    [tenantId]
-  );
-  const activity = useMemo(
-    () => MOCK_DASHBOARD_DATA.recentActivity.filter((a) => a.entityId === tenantId),
-    [tenantId]
-  );
+  // Payments and activity loaded lazily; show empty state until populated
+  const payments: import("@/types/payment").Payment[] = [];
+  const activity: { id: string; title: string; description: string; timestamp: string }[] = [];
 
   if (!tenant) return null;
 
@@ -364,17 +353,17 @@ function DrawerContent({
                     {[
                       {
                         label: "Pagados",
-                        value: payments.filter((p) => p.status === "pagado").length,
+                        value: payments.filter((p) => p.status === "paid").length,
                         color: "text-success",
                       },
                       {
                         label: "Pendientes",
-                        value: payments.filter((p) => p.status === "pendiente").length,
+                        value: payments.filter((p) => p.status === "pending").length,
                         color: "text-warning",
                       },
                       {
                         label: "Atrasados",
-                        value: payments.filter((p) => p.status === "atrasado").length,
+                        value: payments.filter((p) => p.status === "overdue").length,
                         color: "text-destructive",
                       },
                     ].map((s) => (
@@ -393,9 +382,9 @@ function DrawerContent({
                         key={payment.id}
                         className={cn(
                           "flex items-center justify-between rounded-lg border px-4 py-3",
-                          payment.status === "pagado"
+                          payment.status === "paid"
                             ? "border-border"
-                            : payment.status === "atrasado"
+                            : payment.status === "overdue"
                             ? "border-destructive/30 bg-destructive/5"
                             : "border-warning/30 bg-warning/5"
                         )}
@@ -404,16 +393,16 @@ function DrawerContent({
                           <div
                             className={cn(
                               "flex h-7 w-7 shrink-0 items-center justify-center rounded-full",
-                              payment.status === "pagado"
+                              payment.status === "paid"
                                 ? "bg-success/10 text-success"
-                                : payment.status === "atrasado"
+                                : payment.status === "overdue"
                                 ? "bg-destructive/10 text-destructive"
                                 : "bg-warning/10 text-warning"
                             )}
                           >
-                            {payment.status === "pagado" ? (
+                            {payment.status === "paid" ? (
                               <CheckCircle2 className="h-3.5 w-3.5" />
-                            ) : payment.status === "atrasado" ? (
+                            ) : payment.status === "overdue" ? (
                               <XCircle className="h-3.5 w-3.5" />
                             ) : (
                               <Clock className="h-3.5 w-3.5" />
@@ -421,7 +410,7 @@ function DrawerContent({
                           </div>
                           <div>
                             <p className="text-xs font-medium text-foreground capitalize">
-                              {payment.month.replace("-", " · ")}
+                              {payment.period.replace("-", " · ")}
                             </p>
                             <p className="text-[11px] text-muted-foreground">
                               {payment.paidDate

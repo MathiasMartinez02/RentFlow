@@ -33,6 +33,10 @@ interface BackendOccupancy {
   distribucionPorTipo: Array<{ tipo: string; total: number; ocupadas: number; disponibles: number; rate: number }>;
 }
 
+interface BackendMaintenance {
+  costos: { costosTotales: number; costoEstimadoAbiertos: number; costosUltimos30Dias: number };
+}
+
 interface BackendActivity {
   pagosRecientes: Array<{ id: string; monto: string | number; estado: string; periodo: string; createdAt: string; tenant?: { nombre: string; apellido: string }; property?: { nombre: string } }>;
   contratosRecientes: Array<{ id: string; codigoContrato: string; estado: string; montoMensual: string | number; createdAt: string; tenant?: { nombre: string; apellido: string }; property?: { nombre: string } }>;
@@ -57,32 +61,66 @@ function buildDashboardData(
   overview: BackendOverview,
   revenue: BackendRevenue,
   occupancy: BackendOccupancy,
+  maintenance: BackendMaintenance,
   activity: BackendActivity
 ): DashboardData {
+  const revChange = Math.round(revenue.comparativaAnual.crecimiento * 10) / 10;
   const metrics: DashboardData["metrics"] = {
-    totalRevenue: metricCard(
-      overview.pagos.ingresosMesActual,
-      "Ingresos totales",
-      overview.pagos.ingresosTotales
-    ),
-    activeProperties: metricCard(overview.propiedades.total, "Propiedades"),
+    totalRevenue: {
+      label: "Ingresos año actual",
+      value: revenue.comparativaAnual.anioActual,
+      change: revChange,
+      changeLabel: "vs. año anterior",
+      trend: revChange > 0 ? "up" : revChange < 0 ? "down" : "neutral",
+    },
+    activeProperties: {
+      label: "Propiedades",
+      value: overview.propiedades.total,
+      change: 0,
+      changeLabel: `${overview.propiedades.ocupadas} ocupadas · ${overview.propiedades.disponibles} disponibles`,
+      trend: "neutral",
+    },
     occupancyRate: {
       label: "Tasa de ocupación",
       value: `${Math.round(overview.propiedades.occupancyRate)}%`,
       change: 0,
-      changeLabel: "",
-      trend: "neutral",
+      changeLabel: `${overview.propiedades.ocupadas} de ${overview.propiedades.total} propiedades`,
+      trend: overview.propiedades.occupancyRate >= 70 ? "up" : overview.propiedades.occupancyRate >= 40 ? "neutral" : "down",
     },
-    activeTenants: metricCard(overview.contratos.activos, "Contratos activos"),
-    pendingPayments: metricCard(overview.pagos.pendientes, "Pagos pendientes"),
-    maintenanceRequests: metricCard(overview.mantenimiento.abiertos, "Mantenimiento abierto"),
+    activeTenants: {
+      label: "Contratos activos",
+      value: overview.contratos.activos,
+      change: 0,
+      changeLabel: overview.contratos.porVencer > 0
+        ? `${overview.contratos.porVencer} por vencer`
+        : "todos al día",
+      trend: overview.contratos.porVencer > 0 ? "down" : "neutral",
+    },
+    pendingPayments: {
+      label: "Pagos pendientes",
+      value: overview.pagos.pendientes,
+      change: Math.round(overview.pagos.collectionRate * 10) / 10,
+      changeLabel: "% cobranza",
+      trend: overview.pagos.collectionRate >= 80 ? "up" : overview.pagos.collectionRate >= 60 ? "neutral" : "down",
+    },
+    maintenanceRequests: {
+      label: "Mantenimiento abierto",
+      value: overview.mantenimiento.abiertos,
+      change: 0,
+      changeLabel: overview.mantenimiento.urgentes > 0
+        ? `${overview.mantenimiento.urgentes} urgente${overview.mantenimiento.urgentes !== 1 ? "s" : ""}`
+        : "sin urgentes",
+      trend: overview.mantenimiento.urgentes > 0 ? "down" : "neutral",
+    },
   };
 
+  const monthCount = revenue.ultimos12Meses.length || 12;
+  const monthlyExpenses = Math.round(maintenance.costos.costosTotales / monthCount);
   const revenueHistory: RevenueDataPoint[] = revenue.ultimos12Meses.map((m) => ({
     month: m.mesLabel,
     revenue: m.ingresos,
-    expenses: 0,
-    net: m.ingresos,
+    expenses: monthlyExpenses,
+    net: m.ingresos - monthlyExpenses,
   }));
 
   const occupancyHistory: OccupancyDataPoint[] = revenue.ultimos12Meses.map((m) => ({
@@ -142,12 +180,13 @@ function buildDashboardData(
 
 export const dashboardService = {
   async getData(): Promise<DashboardData> {
-    const [overview, revenue, occupancy, activity] = await Promise.all([
+    const [overview, revenue, occupancy, maintenance, activity] = await Promise.all([
       api.get<BackendOverview>("/dashboard/overview"),
       api.get<BackendRevenue>("/dashboard/revenue"),
       api.get<BackendOccupancy>("/dashboard/occupancy"),
+      api.get<BackendMaintenance>("/dashboard/maintenance"),
       api.get<BackendActivity>("/dashboard/activity"),
     ]);
-    return buildDashboardData(overview, revenue, occupancy, activity);
+    return buildDashboardData(overview, revenue, occupancy, maintenance, activity);
   },
 };

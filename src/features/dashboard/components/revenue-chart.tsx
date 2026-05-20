@@ -122,11 +122,10 @@ export function RevenueChart({ data, isLoading }: RevenueChartProps) {
                 dataKey="expenses"
                 name="Gastos"
                 stroke="hsl(0,72%,51%)"
-                strokeWidth={1.5}
+                strokeWidth={2}
                 fill="url(#expensesGradient)"
-                strokeDasharray="4 4"
                 dot={false}
-                activeDot={{ r: 3, strokeWidth: 0, fill: "hsl(0,72%,51%)" }}
+                activeDot={{ r: 4, strokeWidth: 0, fill: "hsl(0,72%,51%)" }}
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -139,7 +138,7 @@ export function RevenueChart({ data, isLoading }: RevenueChartProps) {
             </div>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <span className="h-2 w-2 rounded-full bg-destructive" />
-              Gastos
+              Gastos (promedio mantenimiento)
             </div>
           </div>
         </CardContent>

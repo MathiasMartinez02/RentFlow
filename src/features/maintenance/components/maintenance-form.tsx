@@ -64,8 +64,6 @@ export function MaintenanceForm({ isOpen, editingId, isMutating, onSubmit, onClo
       status: editingTicket.status,
       assignedTo: editingTicket.assignedTo ?? "",
       estimatedCost: editingTicket.estimatedCost ?? "",
-      laborCost: editingTicket.laborCost ?? "",
-      materialsCost: editingTicket.materialsCost ?? "",
       finalCost: editingTicket.finalCost ?? "",
       reportedAt: editingTicket.reportedAt.split("T")[0],
       notes: editingTicket.notes ?? "",
@@ -90,15 +88,15 @@ export function MaintenanceForm({ isOpen, editingId, isMutating, onSubmit, onClo
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-xl p-0 gap-0">
-        <DialogHeader className="px-6 pt-6 pb-4">
+      <DialogContent className="max-w-xl p-0 gap-0 max-h-[90vh] flex flex-col overflow-hidden">
+        <DialogHeader className="px-6 pt-6 pb-4 shrink-0">
           <DialogTitle>
             {editingId ? "Editar Ticket" : "Nuevo Ticket de Mantenimiento"}
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="overflow-y-auto max-h-[calc(90vh-140px)]">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+          <div className="flex-1 overflow-y-auto min-h-0">
             <div className="space-y-5 px-6 pb-4">
 
               {/* Información básica */}
@@ -268,24 +266,12 @@ export function MaintenanceForm({ isOpen, editingId, isMutating, onSubmit, onClo
                 </div>
 
                 <div>
-                  <Label>Técnico Asignado</Label>
-                  <Controller
-                    name="assignedTo"
-                    control={control}
-                    render={({ field }) => (
-                      <Select
-                        value={field.value || "__none__"}
-                        onValueChange={(v) => field.onChange(v === "__none__" ? "" : v)}
-                      >
-                        <SelectTrigger className="mt-1.5">
-                          <SelectValue placeholder="Sin asignar" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="__none__">Sin asignar</SelectItem>
-                          {/* Technicians list comes from backend assignedTo field; currently no separate endpoint */}
-                        </SelectContent>
-                      </Select>
-                    )}
+                  <Label htmlFor="assignedTo">Técnico Asignado</Label>
+                  <Input
+                    id="assignedTo"
+                    placeholder="Ej: Juan Pérez - Plomero"
+                    className="mt-1.5"
+                    {...register("assignedTo")}
                   />
                 </div>
               </FormSection>
@@ -317,28 +303,6 @@ export function MaintenanceForm({ isOpen, editingId, isMutating, onSubmit, onClo
                       {...register("finalCost")}
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="laborCost">Mano de Obra</Label>
-                    <Input
-                      id="laborCost"
-                      type="number"
-                      min={0}
-                      className="mt-1.5"
-                      placeholder="95000"
-                      {...register("laborCost")}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="materialsCost">Materiales</Label>
-                    <Input
-                      id="materialsCost"
-                      type="number"
-                      min={0}
-                      className="mt-1.5"
-                      placeholder="85000"
-                      {...register("materialsCost")}
-                    />
-                  </div>
                 </div>
               </FormSection>
 
@@ -355,7 +319,7 @@ export function MaintenanceForm({ isOpen, editingId, isMutating, onSubmit, onClo
             </div>
           </div>
 
-          <DialogFooter className="px-6 py-4 border-t border-border">
+          <DialogFooter className="shrink-0 px-6 py-4 border-t border-border">
             <Button type="button" variant="outline" onClick={onClose} disabled={isMutating}>
               Cancelar
             </Button>

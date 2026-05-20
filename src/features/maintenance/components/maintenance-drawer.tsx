@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
 import { formatCurrency, formatDate } from "@/shared/utils/format";
 import { useCatalogStore } from "@/store/catalog.store";
 
@@ -81,10 +80,6 @@ function DrawerContent({
   const statusCfg = STATUS_CONFIG[ticket.status];
   const priorityCfg = PRIORITY_CONFIG[ticket.priority];
   const StatusIcon = statusCfg.icon;
-
-  const totalCost = ticket.finalCost ?? ticket.estimatedCost ?? 0;
-  const laborPct = totalCost > 0 && ticket.laborCost ? (ticket.laborCost / totalCost) * 100 : 0;
-  const materialsPct = totalCost > 0 && ticket.materialsCost ? (ticket.materialsCost / totalCost) * 100 : 0;
 
   const timeline = [
     ticket.reportedAt && { date: ticket.reportedAt, label: "Ticket reportado", icon: FileText },
@@ -299,8 +294,6 @@ function DrawerContent({
                 {[
                   { label: "Costo Estimado", value: ticket.estimatedCost, color: "text-foreground" },
                   { label: "Costo Final", value: ticket.finalCost, color: "text-success" },
-                  { label: "Mano de Obra", value: ticket.laborCost, color: "text-foreground" },
-                  { label: "Materiales", value: ticket.materialsCost, color: "text-foreground" },
                 ].map(({ label, value, color }) => (
                   <div key={label} className="rounded-lg border border-border bg-muted/20 p-3 space-y-1">
                     <p className="text-xs text-muted-foreground">{label}</p>
@@ -310,30 +303,6 @@ function DrawerContent({
                   </div>
                 ))}
               </div>
-
-              {totalCost > 0 && (ticket.laborCost || ticket.materialsCost) && (
-                <div className="space-y-3">
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Distribución del Costo</p>
-                  {ticket.laborCost && (
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">Mano de Obra</span>
-                        <span className="font-medium">{laborPct.toFixed(0)}%</span>
-                      </div>
-                      <Progress value={laborPct} className="h-1.5" />
-                    </div>
-                  )}
-                  {ticket.materialsCost && (
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">Materiales</span>
-                        <span className="font-medium">{materialsPct.toFixed(0)}%</span>
-                      </div>
-                      <Progress value={materialsPct} className="h-1.5" />
-                    </div>
-                  )}
-                </div>
-              )}
 
               {ticket.finalCost && ticket.estimatedCost && (
                 <div className="rounded-lg border border-border bg-muted/10 p-4">

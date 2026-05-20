@@ -46,7 +46,7 @@ export function useProperties(filters?: PropertyFilters): UsePropertiesReturn {
       const result = await propertiesService.getAll(filters);
       setProperties(result.data);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to load properties"));
+      setError(err instanceof Error ? err : new Error("Error al cargar las propiedades"));
     } finally {
       setIsLoading(false);
     }

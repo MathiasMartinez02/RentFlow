@@ -27,8 +27,6 @@ export interface MaintenanceTicket {
   assignedTo?: string;
   estimatedCost?: number;
   finalCost?: number;
-  laborCost?: number;
-  materialsCost?: number;
   reportedAt: string;
   startedAt?: string;
   resolvedAt?: string;

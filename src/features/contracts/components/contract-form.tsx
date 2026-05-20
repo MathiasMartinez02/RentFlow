@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog,
   DialogContent,
@@ -116,15 +115,15 @@ export function ContractForm({ isOpen, editingId, isMutating, onSubmit, onClose 
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl p-0 gap-0">
-        <DialogHeader className="px-6 pt-6 pb-4">
+      <DialogContent className="max-w-2xl p-0 gap-0 max-h-[90vh] flex flex-col overflow-hidden">
+        <DialogHeader className="px-6 pt-6 pb-4 shrink-0">
           <DialogTitle>
             {editingId ? "Editar Contrato" : "Nuevo Contrato"}
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <ScrollArea className="max-h-[calc(85vh-140px)]">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+          <div className="flex-1 overflow-y-auto min-h-0">
             <div className="space-y-6 px-6 pb-4">
 
               {/* Partes */}
@@ -320,9 +319,9 @@ export function ContractForm({ isOpen, editingId, isMutating, onSubmit, onClose 
                 <FieldError message={errors.terms?.message} />
               </FormSection>
             </div>
-          </ScrollArea>
+          </div>
 
-          <DialogFooter>
+          <DialogFooter className="shrink-0 px-6 py-4 border-t border-border">
             <Button type="button" variant="outline" onClick={onClose} disabled={isMutating}>
               Cancelar
             </Button>

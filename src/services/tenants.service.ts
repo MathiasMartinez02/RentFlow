@@ -1,5 +1,5 @@
 import { api } from "@/lib/api-client";
-import type { Tenant, TenantFilters, TenantStatus } from "@/types/tenant";
+import type { Tenant, TenantFilters, TenantStatus, TenantPaymentStatus } from "@/types/tenant";
 import type { ApiResponse } from "@/types";
 
 // ─── Enum mappers ────────────────────────────────────────────────────────────
@@ -15,7 +15,7 @@ const TENANT_STATUS_FROM_BACKEND: Record<string, TenantStatus> = {
   ACTIVO: "active",
   INACTIVO: "inactive",
   PENDIENTE: "pending",
-  MOROSO: "active", // displayed as active but payment is overdue
+  MOROSO: "active",
 };
 
 // ─── Backend DTO shape ───────────────────────────────────────────────────────
@@ -46,6 +46,19 @@ interface BackendPaginatedResponse<T> {
 
 // ─── Mapper ──────────────────────────────────────────────────────────────────
 
+function derivePaymentStatus(estado: string): TenantPaymentStatus | undefined {
+  if (estado === "MOROSO") return "atrasado";
+  if (estado === "ACTIVO") return "al_dia";
+  return undefined;
+}
+
+function deriveEstado(status: string, paymentStatus?: string): string {
+  if (status === "inactive") return "INACTIVO";
+  if (paymentStatus === "atrasado") return "MOROSO";
+  if (status === "pending") return "PENDIENTE";
+  return "ACTIVO";
+}
+
 function fromBackend(raw: BackendTenant): Tenant {
   return {
     id: raw.id,
@@ -55,6 +68,7 @@ function fromBackend(raw: BackendTenant): Tenant {
     phone: raw.telefono,
     nationalId: raw.dni,
     status: TENANT_STATUS_FROM_BACKEND[raw.estado] ?? "pending",
+    paymentStatus: derivePaymentStatus(raw.estado),
     address: raw.direccion,
     observations: raw.observaciones,
     propertyId: raw.propertyId,
@@ -71,7 +85,7 @@ function toPayload(data: Partial<Tenant>) {
     email: data.email,
     telefono: data.phone,
     dni: data.nationalId,
-    estado: data.status ? TENANT_STATUS_TO_BACKEND[data.status] : undefined,
+    estado: data.status ? deriveEstado(data.status, data.paymentStatus) : undefined,
     direccion: data.address,
     observaciones: data.observations,
     propertyId: data.propertyId || undefined,

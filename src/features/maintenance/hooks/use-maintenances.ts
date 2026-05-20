@@ -88,10 +88,8 @@ export function useMaintenances(filters?: MaintenanceFilters): UseMaintenancesRe
         priority: data.priority,
         status: data.status,
         assignedTo: data.assignedTo || undefined,
-        estimatedCost: data.estimatedCost !== "" ? Number(data.estimatedCost) : undefined,
-        laborCost: data.laborCost !== "" ? Number(data.laborCost) : undefined,
-        materialsCost: data.materialsCost !== "" ? Number(data.materialsCost) : undefined,
-        finalCost: data.finalCost !== "" ? Number(data.finalCost) : undefined,
+        estimatedCost: data.estimatedCost != null && data.estimatedCost !== "" ? Number(data.estimatedCost) : undefined,
+        finalCost: data.finalCost != null && data.finalCost !== "" ? Number(data.finalCost) : undefined,
         reportedAt: data.reportedAt ? new Date(data.reportedAt).toISOString() : now,
         notes: data.notes || undefined,
       });
@@ -115,10 +113,8 @@ export function useMaintenances(filters?: MaintenanceFilters): UseMaintenancesRe
         priority: data.priority,
         status: data.status,
         assignedTo: data.assignedTo || undefined,
-        estimatedCost: data.estimatedCost !== "" ? Number(data.estimatedCost) : undefined,
-        laborCost: data.laborCost !== "" ? Number(data.laborCost) : undefined,
-        materialsCost: data.materialsCost !== "" ? Number(data.materialsCost) : undefined,
-        finalCost: data.finalCost !== "" ? Number(data.finalCost) : undefined,
+        estimatedCost: data.estimatedCost != null && data.estimatedCost !== "" ? Number(data.estimatedCost) : undefined,
+        finalCost: data.finalCost != null && data.finalCost !== "" ? Number(data.finalCost) : undefined,
         notes: data.notes || undefined,
       });
       setTickets((prev) => prev.map((t) => (t.id === id ? updated : t)));

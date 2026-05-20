@@ -83,9 +83,8 @@ export function useContracts(filters?: ContractFilters): UseContractsReturn {
         status: data.status,
         monthlyRent: data.monthlyRent,
         deposit: data.deposit,
-        expenses: data.expenses !== "" ? Number(data.expenses) : undefined,
-        annualIncreasePercent:
-          data.annualIncreasePercent !== "" ? Number(data.annualIncreasePercent) : undefined,
+        expenses: data.expenses != null && data.expenses !== "" ? Number(data.expenses) : undefined,
+        annualIncreasePercent: data.annualIncreasePercent != null && data.annualIncreasePercent !== "" ? Number(data.annualIncreasePercent) : undefined,
         renewalOption: data.renewalOption,
         noticePeriodDays: data.noticePeriodDays,
         terms: data.terms || undefined,
@@ -108,9 +107,8 @@ export function useContracts(filters?: ContractFilters): UseContractsReturn {
         status: data.status,
         monthlyRent: data.monthlyRent,
         deposit: data.deposit,
-        expenses: data.expenses !== "" ? Number(data.expenses) : undefined,
-        annualIncreasePercent:
-          data.annualIncreasePercent !== "" ? Number(data.annualIncreasePercent) : undefined,
+        expenses: data.expenses != null && data.expenses !== "" ? Number(data.expenses) : undefined,
+        annualIncreasePercent: data.annualIncreasePercent != null && data.annualIncreasePercent !== "" ? Number(data.annualIncreasePercent) : undefined,
         renewalOption: data.renewalOption,
         noticePeriodDays: data.noticePeriodDays,
         terms: data.terms || undefined,

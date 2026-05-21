@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   X,
@@ -24,6 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatCurrency, formatDate, getInitials } from "@/shared/utils/format";
 import { useCatalogStore } from "@/store/catalog.store";
 import type { Tenant } from "@/types/tenant";
+import type { Payment } from "@/types/payment";
 
 const STATUS_BADGE: Record<
   Tenant["status"],
@@ -102,7 +102,7 @@ function DrawerContent({
     ? properties.find((p) => p.id === tenant.propertyId)
     : null;
   // Payments and activity loaded lazily; show empty state until populated
-  const payments: import("@/types/payment").Payment[] = [];
+  const payments: Payment[] = [];
   const activity: { id: string; title: string; description: string; timestamp: string }[] = [];
 
   if (!tenant) return null;

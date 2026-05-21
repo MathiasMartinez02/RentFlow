@@ -361,7 +361,7 @@ function LoginForm() {
       <div className="mt-5 rounded-lg border border-border bg-muted/30 px-3.5 py-2.5">
         <p className="text-[11px] text-muted-foreground">
           <span className="font-semibold text-foreground">Modo demo:</span>{" "}
-          demo@demo.com · demo1234
+          admin@rentflow.com · Admin123*
         </p>
       </div>
     </motion.div>

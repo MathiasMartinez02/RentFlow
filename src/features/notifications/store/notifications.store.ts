@@ -18,7 +18,7 @@ interface NotificationsState {
   deleteNotification: (id: string) => void;
 }
 
-export const useNotificationsStore = create<NotificationsState>()((set, get) => ({
+export const useNotificationsStore = create<NotificationsState>()((set, _get) => ({
   items: [],
   isPanelOpen: false,
   activeCategory: "all",

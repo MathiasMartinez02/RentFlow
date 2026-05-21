@@ -19,13 +19,6 @@ const CONTRACT_STATUS: Record<string, { label: string; className: string }> = {
   terminated: { label: "Rescindido",  className: "text-zinc-600 bg-zinc-500/10" },
 };
 
-const PAYMENT_STATUS: Record<string, { label: string; className: string }> = {
-  paid:      { label: "Pagado",    className: "text-emerald-600 bg-emerald-500/10" },
-  pending:   { label: "Pendiente", className: "text-amber-600 bg-amber-500/10" },
-  overdue:   { label: "Vencido",   className: "text-red-600 bg-red-500/10" },
-  partial:   { label: "Parcial",   className: "text-blue-600 bg-blue-500/10" },
-  cancelled: { label: "Cancelado", className: "text-zinc-600 bg-zinc-500/10" },
-};
 
 const MAINTENANCE_PRIORITY: Record<string, { label: string; className: string }> = {
   urgent: { label: "Urgente", className: "text-red-600 bg-red-500/10" },

@@ -87,10 +87,10 @@ export function MaintenanceTable({ tickets, isLoading, onView, onEdit, onDelete 
     () => new Map(allProperties.map((p) => [p.id, p])),
     [allProperties]
   );
-  const technicianMap = new Map(); // no separate technicians endpoint
-
   const columns: ColumnDef<MaintenanceTicket>[] = useMemo(
-    () => [
+    () => {
+      const technicianMap = new Map(); // no separate technicians endpoint
+      return [
       {
         accessorKey: "title",
         header: ({ column }) => <SortableHeader column={column as Column<MaintenanceTicket, unknown>} label="Título" />,
@@ -214,8 +214,9 @@ export function MaintenanceTable({ tickets, isLoading, onView, onEdit, onDelete 
           </div>
         ),
       },
-    ],
-    [propertyMap, technicianMap, onView, onEdit, onDelete, hideCosts]
+    ];
+    },
+    [propertyMap, onView, onEdit, onDelete, hideCosts]
   );
 
   const table = useReactTable({

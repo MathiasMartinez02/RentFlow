@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { RefreshCw, FileText, CreditCard, Wrench, Plus, CheckCircle, AlertTriangle, Clock } from "lucide-react";
+import { FileText, CreditCard, Wrench, Plus, CheckCircle, AlertTriangle, Clock } from "lucide-react";
 import { motion } from "framer-motion";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,6 @@ import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate } from "@/shared/utils/format";
 import { useAuthStore } from "@/store/auth.store";
 import { useCatalogStore } from "@/store/catalog.store";
-import { useUIStore } from "@/store";
 import { MaintenanceFormInquilino } from "@/features/maintenance/components/maintenance-form-inquilino";
 import { useMaintenances } from "@/features/maintenance/hooks/use-maintenances";
 import type { Payment } from "@/types/payment";

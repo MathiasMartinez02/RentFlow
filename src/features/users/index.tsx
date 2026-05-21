@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { UserCog, RefreshCw, Shield, CheckCircle2, XCircle, MoreHorizontal, ChevronDown } from "lucide-react";
+import { UserCog, RefreshCw, Shield, CheckCircle2, XCircle, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/ui/page-header";

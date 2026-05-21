@@ -34,6 +34,7 @@ import {
 } from "@/shared/utils/format";
 import { useCatalogStore } from "@/store/catalog.store";
 import type { Contract } from "@/types/contract";
+import type { Payment } from "@/types/payment";
 import { getDaysLeft, isExpiringSoon } from "../hooks/use-contracts";
 
 const STATUS_CONFIG: Record<
@@ -198,7 +199,7 @@ function DrawerContent({
   const contract = contracts.find((c) => c.id === contractId);
   const property = contract ? properties.find((p) => p.id === contract.propertyId) : null;
   const tenant = contract ? tenants.find((t) => t.id === contract.tenantId) : null;
-  const payments: import("@/types/payment").Payment[] = [];
+  const payments: Payment[] = [];
 
   const daysLeft = contract ? getDaysLeft(contract.endDate) : 0;
 

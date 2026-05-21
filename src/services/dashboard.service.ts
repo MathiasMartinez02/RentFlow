@@ -1,7 +1,6 @@
 import { api } from "@/lib/api-client";
 import type {
   DashboardData,
-  MetricCard,
   RevenueDataPoint,
   OccupancyDataPoint,
   ActivityEvent,

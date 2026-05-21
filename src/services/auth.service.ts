@@ -1,5 +1,5 @@
 import { api } from "@/lib/api-client";
-import type { AuthUser, LoginCredentials, RegisterData } from "@/types/auth";
+import type { AuthUser, LoginCredentials, RegisterData, UserRole } from "@/types/auth";
 
 interface BackendUser {
   id: string;
@@ -8,6 +8,8 @@ interface BackendUser {
   apellido: string;
   role: string;
   empresa?: string;
+  organizationId?: string;
+  linkedTenantId?: string;
 }
 
 interface BackendAuthResponse {
@@ -22,6 +24,15 @@ export interface AuthSession {
   refreshToken: string;
 }
 
+const VALID_ROLES = new Set<UserRole>([
+  "SUPER_ADMIN", "ADMIN", "FINANZAS", "VENDEDOR", "MANTENIMIENTO", "CLIENTE", "INQUILINO",
+]);
+
+function toUserRole(raw: string): UserRole {
+  const upper = raw?.toUpperCase() as UserRole;
+  return VALID_ROLES.has(upper) ? upper : "ADMIN";
+}
+
 function toAuthUser(u: BackendUser): AuthUser {
   return {
     id: u.id,
@@ -29,7 +40,9 @@ function toAuthUser(u: BackendUser): AuthUser {
     lastName: u.apellido,
     email: u.email,
     company: u.empresa,
-    role: "owner",
+    role: toUserRole(u.role),
+    organizationId: u.organizationId,
+    linkedTenantId: u.linkedTenantId,
     createdAt: new Date().toISOString(),
   };
 }

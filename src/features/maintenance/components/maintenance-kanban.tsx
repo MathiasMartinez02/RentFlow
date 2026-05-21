@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { formatCurrency, formatDate } from "@/shared/utils/format";
 import { useCatalogStore } from "@/store/catalog.store";
+import { usePermissions } from "@/hooks/use-permissions";
 import type { MaintenanceTicket, MaintenanceStatus } from "@/types/maintenance";
 
 const COLUMNS: { status: MaintenanceStatus; label: string; icon: React.ElementType; color: string }[] = [
@@ -47,12 +48,14 @@ const CATEGORY_ICONS: Record<string, string> = {
 interface KanbanCardProps {
   ticket: MaintenanceTicket;
   onView: (id: string) => void;
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
   onDragStart: (e: React.DragEvent, id: string) => void;
 }
 
 function KanbanCard({ ticket, onView, onEdit, onDelete, onDragStart }: KanbanCardProps) {
+  const { is } = usePermissions();
+  const hideCosts = is("INQUILINO");
   const allProperties = useCatalogStore((s) => s.properties);
   const property = allProperties.find((p) => p.id === ticket.propertyId);
   const technician = null as unknown as { name: string } | null;
@@ -99,16 +102,22 @@ function KanbanCard({ ticket, onView, onEdit, onDelete, onDragStart }: KanbanCar
               <DropdownMenuItem onClick={() => onView(ticket.id)}>
                 <Eye className="mr-2 h-3.5 w-3.5" /> Ver
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onEdit(ticket.id)}>
-                <Pencil className="mr-2 h-3.5 w-3.5" /> Editar
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => onDelete(ticket.id)}
-                className="text-destructive focus:text-destructive"
-              >
-                <Trash2 className="mr-2 h-3.5 w-3.5" /> Eliminar
-              </DropdownMenuItem>
+              {onEdit && (
+                <DropdownMenuItem onClick={() => onEdit(ticket.id)}>
+                  <Pencil className="mr-2 h-3.5 w-3.5" /> Editar
+                </DropdownMenuItem>
+              )}
+              {onDelete && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => onDelete(ticket.id)}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="mr-2 h-3.5 w-3.5" /> Eliminar
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -156,7 +165,7 @@ function KanbanCard({ ticket, onView, onEdit, onDelete, onDragStart }: KanbanCar
           )}
         </div>
         <div className="flex items-center gap-2">
-          {ticket.estimatedCost && (
+          {!hideCosts && ticket.estimatedCost && (
             <span className="text-[10px] font-medium text-foreground">
               {formatCurrency(ticket.estimatedCost)}
             </span>
@@ -178,8 +187,8 @@ interface KanbanColumnProps {
   tickets: MaintenanceTicket[];
   isDragOver: boolean;
   onView: (id: string) => void;
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
   onDragStart: (e: React.DragEvent, id: string) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, status: MaintenanceStatus) => void;
@@ -239,8 +248,8 @@ interface MaintenanceKanbanProps {
   tickets: MaintenanceTicket[];
   isLoading?: boolean;
   onView: (id: string) => void;
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
   onStatusChange: (id: string, status: MaintenanceStatus) => void;
 }
 

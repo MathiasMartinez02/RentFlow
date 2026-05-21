@@ -62,8 +62,8 @@ interface TenantDrawerProps {
   tenantId: string | null;
   isOpen: boolean;
   onClose: () => void;
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
 export function TenantDrawer({ tenantId, isOpen, onClose, onEdit, onDelete }: TenantDrawerProps) {
@@ -90,8 +90,8 @@ function DrawerContent({
 }: {
   tenantId: string;
   onClose: () => void;
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }) {
   const { tenants, contracts, properties } = useCatalogStore();
   const tenant = tenants.find((t) => t.id === tenantId);
@@ -183,19 +183,23 @@ function DrawerContent({
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={() => onEdit(tenant.id)}>
-              <Pencil className="h-3.5 w-3.5" />
-              Editar
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 gap-1.5 text-destructive hover:border-destructive hover:text-destructive"
-              onClick={() => onDelete(tenant.id)}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              Eliminar
-            </Button>
+            {onEdit && (
+              <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={() => onEdit(tenant.id)}>
+                <Pencil className="h-3.5 w-3.5" />
+                Editar
+              </Button>
+            )}
+            {onDelete && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1.5 text-destructive hover:border-destructive hover:text-destructive"
+                onClick={() => onDelete(tenant.id)}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Eliminar
+              </Button>
+            )}
           </div>
         </div>
 

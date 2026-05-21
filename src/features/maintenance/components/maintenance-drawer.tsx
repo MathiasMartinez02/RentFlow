@@ -13,6 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatCurrency, formatDate } from "@/shared/utils/format";
 import { useCatalogStore } from "@/store/catalog.store";
+import { usePermissions } from "@/hooks/use-permissions";
 
 const STATUS_CONFIG = {
   pending: { label: "Pendiente", icon: Clock, class: "bg-muted text-muted-foreground" },
@@ -42,8 +43,8 @@ interface MaintenanceDrawerProps {
   ticketId: string | null;
   isOpen: boolean;
   onClose: () => void;
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
 export function MaintenanceDrawer({ ticketId, isOpen, onClose, onEdit, onDelete }: MaintenanceDrawerProps) {
@@ -67,9 +68,11 @@ function DrawerContent({
 }: {
   ticketId: string;
   onClose: () => void;
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }) {
+  const { is } = usePermissions();
+  const isInquilino = is("INQUILINO");
   const { tickets, properties, tenants } = useCatalogStore();
   const ticket = tickets.find((t) => t.id === ticketId);
   if (!ticket) return null;
@@ -141,19 +144,23 @@ function DrawerContent({
             {statusCfg.label}
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={() => onEdit(ticket.id)}>
-              <Pencil className="h-3.5 w-3.5" />
-              Editar
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 gap-1.5 text-destructive hover:border-destructive hover:text-destructive"
-              onClick={() => onDelete(ticket.id)}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              Eliminar
-            </Button>
+            {onEdit && (
+              <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={() => onEdit(ticket.id)}>
+                <Pencil className="h-3.5 w-3.5" />
+                Editar
+              </Button>
+            )}
+            {onDelete && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1.5 text-destructive hover:border-destructive hover:text-destructive"
+                onClick={() => onDelete(ticket.id)}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Eliminar
+              </Button>
+            )}
           </div>
         </div>
 
@@ -162,7 +169,7 @@ function DrawerContent({
           <TabsList className="h-auto shrink-0 justify-start gap-0 rounded-none border-b border-border bg-transparent px-5 py-0">
             {[
               { value: "general", label: "General" },
-              { value: "costs", label: "Costos" },
+              ...(!isInquilino ? [{ value: "costs", label: "Costos" }] : []),
               { value: "history", label: "Historial" },
             ].map((tab) => (
               <TabsTrigger
@@ -224,33 +231,42 @@ function DrawerContent({
 
               {/* Technician */}
               <Separator />
-              <div className="space-y-2">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Técnico Asignado</p>
-                {technician ? (
-                  <div className="flex items-center gap-3 rounded-lg border border-border p-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-bold text-foreground">
-                      {technician.name.charAt(0)}
+              {isInquilino ? (
+                <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/20 px-4 py-3">
+                  <Wrench className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <p className="text-sm text-muted-foreground">
+                    {ticket.assignedTo ? "Técnico asignado — en gestión" : "Sin técnico asignado aún"}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Técnico Asignado</p>
+                  {technician ? (
+                    <div className="flex items-center gap-3 rounded-lg border border-border p-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-bold text-foreground">
+                        {technician.name.charAt(0)}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-foreground">{technician.name}</p>
+                        <p className="text-xs text-muted-foreground">{technician.specialty}</p>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Phone className="h-3 w-3" />
+                        {technician.phone}
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-foreground">{technician.name}</p>
-                      <p className="text-xs text-muted-foreground">{technician.specialty}</p>
-                    </div>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Phone className="h-3 w-3" />
-                      {technician.phone}
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-sm italic text-muted-foreground">Sin técnico asignado</p>
-                )}
-              </div>
+                  ) : (
+                    <p className="text-sm italic text-muted-foreground">Sin técnico asignado</p>
+                  )}
+                </div>
+              )}
 
-              {/* Notes */}
-              {ticket.notes && (
+              {/* Notes — internal, hidden for INQUILINO */}
+              {!isInquilino && ticket.notes && (
                 <>
                   <Separator />
                   <div className="space-y-2">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Notas</p>
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Notas Internas</p>
                     <div className="rounded-lg bg-muted/40 p-3">
                       <p className="text-sm text-muted-foreground">{ticket.notes}</p>
                     </div>

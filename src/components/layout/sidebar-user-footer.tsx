@@ -18,9 +18,23 @@ interface SidebarUserFooterProps {
 }
 
 const ROLE_LABELS: Record<string, string> = {
-  owner: "Propietario",
-  admin: "Administrador",
-  agent: "Agente",
+  SUPER_ADMIN: "Super Administrador",
+  ADMIN: "Administrador",
+  CLIENTE: "Cliente",
+  FINANZAS: "Finanzas",
+  VENDEDOR: "Vendedor",
+  MANTENIMIENTO: "Mantenimiento",
+  INQUILINO: "Inquilino",
+};
+
+const ROLE_COLORS: Record<string, string> = {
+  SUPER_ADMIN: "bg-violet-500/20 text-violet-500",
+  ADMIN: "bg-primary/20 text-primary",
+  CLIENTE: "bg-sky-500/20 text-sky-500",
+  FINANZAS: "bg-emerald-500/20 text-emerald-500",
+  VENDEDOR: "bg-amber-500/20 text-amber-500",
+  MANTENIMIENTO: "bg-orange-500/20 text-orange-500",
+  INQUILINO: "bg-slate-500/20 text-slate-400",
 };
 
 export function SidebarUserFooter({ isCollapsed }: SidebarUserFooterProps) {
@@ -31,7 +45,9 @@ export function SidebarUserFooter({ isCollapsed }: SidebarUserFooterProps) {
   const firstName = user?.firstName ?? "Usuario";
   const lastName = user?.lastName ?? "";
   const email = user?.email ?? "";
-  const roleLabel = ROLE_LABELS[user?.role ?? ""] ?? "Usuario";
+  const role = user?.role ?? "";
+  const roleLabel = ROLE_LABELS[role] ?? role;
+  const avatarClass = ROLE_COLORS[role] ?? "bg-primary/20 text-primary";
   const initials = getInitials(firstName, lastName);
 
   const handleLogout = () => {
@@ -51,7 +67,10 @@ export function SidebarUserFooter({ isCollapsed }: SidebarUserFooterProps) {
               isCollapsed && "justify-center"
             )}
           >
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/20 text-xs font-semibold text-primary">
+            <div className={cn(
+              "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
+              avatarClass
+            )}>
               {initials}
             </div>
             {!isCollapsed && (
@@ -69,10 +88,18 @@ export function SidebarUserFooter({ isCollapsed }: SidebarUserFooterProps) {
             )}
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" side="top" className="w-48" sideOffset={8}>
+        <DropdownMenuContent align="end" side="top" className="w-52" sideOffset={8}>
           <div className="px-2 py-1.5">
             <p className="text-sm font-medium">{firstName} {lastName}</p>
             <p className="truncate text-xs text-muted-foreground">{email}</p>
+            {roleLabel && (
+              <span className={cn(
+                "mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium",
+                avatarClass
+              )}>
+                {roleLabel}
+              </span>
+            )}
           </div>
           <DropdownMenuSeparator />
           <DropdownMenuItem>

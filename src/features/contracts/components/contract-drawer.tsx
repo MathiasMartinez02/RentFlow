@@ -57,8 +57,8 @@ interface ContractDrawerProps {
   contractId: string | null;
   isOpen: boolean;
   onClose: () => void;
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
 export function ContractDrawer({
@@ -191,8 +191,8 @@ function DrawerContent({
 }: {
   contractId: string;
   onClose: () => void;
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }) {
   const { contracts, properties, tenants } = useCatalogStore();
   const contract = contracts.find((c) => c.id === contractId);
@@ -360,24 +360,28 @@ function DrawerContent({
             )}
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 gap-1.5"
-              onClick={() => onEdit(contract.id)}
-            >
-              <Pencil className="h-3.5 w-3.5" />
-              Editar
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 gap-1.5 text-destructive hover:border-destructive hover:text-destructive"
-              onClick={() => onDelete(contract.id)}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              Eliminar
-            </Button>
+            {onEdit && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1.5"
+                onClick={() => onEdit(contract.id)}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                Editar
+              </Button>
+            )}
+            {onDelete && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1.5 text-destructive hover:border-destructive hover:text-destructive"
+                onClick={() => onDelete(contract.id)}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Eliminar
+              </Button>
+            )}
           </div>
         </div>
 

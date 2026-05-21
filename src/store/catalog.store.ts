@@ -31,33 +31,32 @@ export const useCatalogStore = create<CatalogState>()((set) => ({
   setTickets: (v) => set({ tickets: v }),
 
   refresh: async () => {
-    try {
-      const [
-        { propertiesService },
-        { tenantsService },
-        { contractsService },
-        { maintenanceService },
-      ] = await Promise.all([
-        import("@/services/properties.service"),
-        import("@/services/tenants.service"),
-        import("@/services/contracts.service"),
-        import("@/services/maintenance.service"),
-      ]);
-      const [props, tens, cons, ticks] = await Promise.all([
-        propertiesService.getAll(),
-        tenantsService.getAll(),
-        contractsService.getAll(),
-        maintenanceService.getAll(),
-      ]);
-      set({
-        properties: props.data,
-        tenants: tens.data,
-        contracts: cons.data,
-        tickets: ticks.data,
-        isLoaded: true,
-      });
-    } catch {
-      // Catalog load failures are non-fatal; forms fall back to empty lists
-    }
+    const [
+      { propertiesService },
+      { tenantsService },
+      { contractsService },
+      { maintenanceService },
+    ] = await Promise.all([
+      import("@/services/properties.service"),
+      import("@/services/tenants.service"),
+      import("@/services/contracts.service"),
+      import("@/services/maintenance.service"),
+    ]);
+
+    // allSettled so one 403 (role restriction) doesn't kill the whole catalog
+    const [propsR, tensR, consR, ticksR] = await Promise.allSettled([
+      propertiesService.getAll(),
+      tenantsService.getAll(),
+      contractsService.getAll(),
+      maintenanceService.getAll(),
+    ]);
+
+    set({
+      properties: propsR.status === "fulfilled" ? propsR.value.data : [],
+      tenants: tensR.status === "fulfilled" ? tensR.value.data : [],
+      contracts: consR.status === "fulfilled" ? consR.value.data : [],
+      tickets: ticksR.status === "fulfilled" ? ticksR.value.data : [],
+      isLoaded: true,
+    });
   },
 }));

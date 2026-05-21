@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { formatCurrency, getInitials } from "@/shared/utils/format";
+import { usePermissions } from "@/hooks/use-permissions";
 import type { Property } from "@/types/property";
 import type { Tenant } from "@/types/tenant";
 
@@ -61,8 +62,8 @@ interface PropertyCardProps {
   tenant?: Tenant | null;
   index?: number;
   onView: (id: string) => void;
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
 export function PropertyCard({
@@ -73,6 +74,8 @@ export function PropertyCard({
   onEdit,
   onDelete,
 }: PropertyCardProps) {
+  const { is } = usePermissions();
+  const hideFinancials = is("MANTENIMIENTO");
   const status = STATUS_BADGE[property.status];
 
   return (
@@ -127,18 +130,24 @@ export function PropertyCard({
                   <Eye className="mr-2 h-4 w-4" />
                   Ver detalles
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onEdit(property.id)}>
-                  <Pencil className="mr-2 h-4 w-4" />
-                  Editar propiedad
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => onDelete(property.id)}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Eliminar
-                </DropdownMenuItem>
+                {onEdit && (
+                  <DropdownMenuItem onClick={() => onEdit(property.id)}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Editar propiedad
+                  </DropdownMenuItem>
+                )}
+                {onDelete && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => onDelete(property.id)}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Eliminar
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -161,10 +170,14 @@ export function PropertyCard({
 
           <div className="mt-3 flex items-end justify-between">
             <div>
-              <p className="text-xl font-bold leading-none text-foreground">
-                {formatCurrency(property.rent)}
-                <span className="text-xs font-normal text-muted-foreground">/mes</span>
-              </p>
+              {hideFinancials ? (
+                <p className="text-sm text-muted-foreground italic">Precio restringido</p>
+              ) : (
+                <p className="text-xl font-bold leading-none text-foreground">
+                  {formatCurrency(property.rent)}
+                  <span className="text-xs font-normal text-muted-foreground">/mes</span>
+                </p>
+              )}
             </div>
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
               {property.bedrooms > 0 && (

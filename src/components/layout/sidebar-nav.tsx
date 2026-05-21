@@ -11,10 +11,12 @@ import {
   Wrench,
   Settings,
   Activity,
+  UserCog,
   type LucideProps,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NAV_GROUPS, BOTTOM_NAV_ITEMS } from "@/shared/constants/navigation";
+import { usePermissions } from "@/hooks/use-permissions";
 import type { NavItem } from "@/shared/constants/navigation";
 
 const ICON_MAP: Record<string, React.ComponentType<LucideProps>> = {
@@ -26,15 +28,16 @@ const ICON_MAP: Record<string, React.ComponentType<LucideProps>> = {
   Wrench,
   Settings,
   Activity,
+  UserCog,
 };
 
-interface NavItemProps {
+interface NavItemComponentProps {
   item: NavItem;
   isCollapsed: boolean;
   isActive: boolean;
 }
 
-function SidebarNavItem({ item, isCollapsed, isActive }: NavItemProps) {
+function SidebarNavItem({ item, isCollapsed, isActive }: NavItemComponentProps) {
   const Icon = ICON_MAP[item.icon];
 
   return (
@@ -62,9 +65,7 @@ function SidebarNavItem({ item, isCollapsed, isActive }: NavItemProps) {
           )}
         />
       )}
-      {!isCollapsed && (
-        <span className="truncate">{item.label}</span>
-      )}
+      {!isCollapsed && <span className="truncate">{item.label}</span>}
       {!isCollapsed && item.badge !== undefined && item.badge > 0 && (
         <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-sidebar-primary px-1 text-[10px] font-semibold text-sidebar-primary-foreground">
           {item.badge}
@@ -80,15 +81,21 @@ interface SidebarNavProps {
 
 export function SidebarNav({ isCollapsed }: SidebarNavProps) {
   const pathname = usePathname();
+  const { canView } = usePermissions();
 
   const isActive = (href: string) => {
     if (href === "/dashboard") return pathname === "/dashboard" || pathname === "/";
     return pathname.startsWith(href);
   };
 
+  const visibleGroups = NAV_GROUPS.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => !item.resource || canView(item.resource)),
+  })).filter((group) => group.items.length > 0);
+
   return (
     <div className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-2">
-      {NAV_GROUPS.map((group, groupIdx) => (
+      {visibleGroups.map((group, groupIdx) => (
         <div key={groupIdx} className={cn("flex flex-col gap-0.5", groupIdx > 0 && "mt-4")}>
           {group.label && !isCollapsed && (
             <p className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/30">
@@ -114,11 +121,14 @@ export function SidebarNav({ isCollapsed }: SidebarNavProps) {
 
 export function SidebarBottomNav({ isCollapsed }: SidebarNavProps) {
   const pathname = usePathname();
+  const { canView } = usePermissions();
+
+  const visibleItems = BOTTOM_NAV_ITEMS.filter((item) => !item.resource || canView(item.resource));
 
   return (
     <div className="px-3 pb-3 pt-2">
       <div className="h-px bg-sidebar-border mb-2" />
-      {BOTTOM_NAV_ITEMS.map((item) => {
+      {visibleItems.map((item) => {
         const Icon = ICON_MAP[item.icon];
         const active = pathname.startsWith(item.href);
         return (
@@ -133,9 +143,7 @@ export function SidebarBottomNav({ isCollapsed }: SidebarNavProps) {
             )}
             title={isCollapsed ? item.label : undefined}
           >
-            {Icon && (
-              <Icon className={cn("shrink-0", isCollapsed ? "h-5 w-5" : "h-4 w-4")} />
-            )}
+            {Icon && <Icon className={cn("shrink-0", isCollapsed ? "h-5 w-5" : "h-4 w-4")} />}
             {!isCollapsed && <span>{item.label}</span>}
           </Link>
         );

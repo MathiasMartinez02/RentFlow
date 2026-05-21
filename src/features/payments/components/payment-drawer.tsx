@@ -431,8 +431,8 @@ interface PaymentDrawerProps {
   paymentId: string | null;
   isOpen: boolean;
   onClose: () => void;
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
 export function PaymentDrawer({ paymentId: _paymentId, isOpen, onClose, onEdit, onDelete }: PaymentDrawerProps) {
@@ -477,25 +477,25 @@ export function PaymentDrawer({ paymentId: _paymentId, isOpen, onClose, onEdit, 
                 )}
               </div>
               <div className="ml-3 flex shrink-0 items-center gap-1">
-                {payment && (
-                  <>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => onEdit(payment.id)}
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                      onClick={() => onDelete(payment.id)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </>
+                {payment && onEdit && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => onEdit(payment.id)}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+                {payment && onDelete && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    onClick={() => onDelete(payment.id)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
                 )}
                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}>
                   <X className="h-4 w-4" />
@@ -547,10 +547,12 @@ export function PaymentDrawer({ paymentId: _paymentId, isOpen, onClose, onEdit, 
                   <Button variant="outline" size="sm" onClick={onClose}>
                     Cerrar
                   </Button>
-                  <Button size="sm" onClick={() => onEdit(payment.id)}>
-                    <Pencil className="mr-1.5 h-3.5 w-3.5" />
-                    Editar
-                  </Button>
+                  {onEdit && (
+                    <Button size="sm" onClick={() => onEdit(payment.id)}>
+                      <Pencil className="mr-1.5 h-3.5 w-3.5" />
+                      Editar
+                    </Button>
+                  )}
                 </div>
               </Tabs>
             )}

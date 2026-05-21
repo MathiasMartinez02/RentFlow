@@ -1,4 +1,11 @@
-export type UserRole = "owner" | "admin" | "agent";
+export type UserRole =
+  | "SUPER_ADMIN"
+  | "ADMIN"
+  | "FINANZAS"
+  | "VENDEDOR"
+  | "MANTENIMIENTO"
+  | "CLIENTE"
+  | "INQUILINO";
 
 export interface AuthUser {
   id: string;
@@ -7,6 +14,8 @@ export interface AuthUser {
   email: string;
   company?: string;
   role: UserRole;
+  organizationId?: string;
+  linkedTenantId?: string;
   avatar?: string;
   phone?: string;
   createdAt: string;

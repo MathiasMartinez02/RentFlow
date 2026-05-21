@@ -36,6 +36,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { formatCurrency, getInitials, formatDate } from "@/shared/utils/format";
+import { usePermissions } from "@/hooks/use-permissions";
 import type { Property } from "@/types/property";
 import type { Tenant } from "@/types/tenant";
 import type { Contract } from "@/types/contract";
@@ -81,8 +82,8 @@ interface PropertyTableProps {
   contracts: Contract[];
   isLoading?: boolean;
   onView: (id: string) => void;
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
 export function PropertyTable({
@@ -94,6 +95,8 @@ export function PropertyTable({
   onEdit,
   onDelete,
 }: PropertyTableProps) {
+  const { is } = usePermissions();
+  const hideFinancials = is("MANTENIMIENTO");
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 
@@ -164,15 +167,15 @@ export function PropertyTable({
           );
         },
       },
-      {
+      ...(!hideFinancials ? [{
         accessorKey: "rent",
-        header: ({ column }) => <SortableHeader column={column as Column<Property, unknown>} label="Alquiler Mensual" />,
-        cell: ({ row }) => (
+        header: ({ column }: { column: Column<Property, unknown> }) => <SortableHeader column={column} label="Alquiler Mensual" />,
+        cell: ({ row }: { row: { original: Property } }) => (
           <span className="text-sm font-semibold text-foreground">
             {formatCurrency(row.original.rent)}
           </span>
         ),
-      },
+      }] : []),
       {
         id: "leaseEnd",
         header: () => (
@@ -222,25 +225,31 @@ export function PropertyTable({
                   <Eye className="mr-2 h-4 w-4" />
                   Ver
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onEdit(row.original.id)}>
-                  <Pencil className="mr-2 h-4 w-4" />
-                  Editar
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => onDelete(row.original.id)}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Eliminar
-                </DropdownMenuItem>
+                {onEdit && (
+                  <DropdownMenuItem onClick={() => onEdit(row.original.id)}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Editar
+                  </DropdownMenuItem>
+                )}
+                {onDelete && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => onDelete(row.original.id)}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Eliminar
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         ),
       },
     ],
-    [tenantMap, contractMap, onView, onEdit, onDelete]
+    [tenantMap, contractMap, onView, onEdit, onDelete, hideFinancials]
   );
 
   const table = useReactTable({

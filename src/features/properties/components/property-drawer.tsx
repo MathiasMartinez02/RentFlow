@@ -25,6 +25,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { formatCurrency, formatDate, formatPercent, getInitials } from "@/shared/utils/format";
 import { useCatalogStore } from "@/store/catalog.store";
+import { usePermissions } from "@/hooks/use-permissions";
 import type { Property } from "@/types/property";
 
 const STATUS_BADGE: Record<
@@ -48,8 +49,8 @@ interface PropertyDrawerProps {
   propertyId: string | null;
   isOpen: boolean;
   onClose: () => void;
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
 export function PropertyDrawer({
@@ -82,9 +83,11 @@ function DrawerContent({
 }: {
   propertyId: string;
   onClose: () => void;
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }) {
+  const { is } = usePermissions();
+  const hideFinancials = is("MANTENIMIENTO");
   const { properties, tenants, contracts } = useCatalogStore();
   const prop = properties.find((p) => p.id === propertyId);
   const tenant = prop?.tenantId ? tenants.find((t) => t.id === prop.tenantId) : null;
@@ -159,24 +162,32 @@ function DrawerContent({
 
         {/* Quick actions */}
         <div className="flex items-center justify-between border-b border-border px-5 py-3">
-          <span className="text-xl font-bold text-foreground">
-            {formatCurrency(prop.rent)}
-            <span className="text-xs font-normal text-muted-foreground">/mo</span>
-          </span>
+          {hideFinancials ? (
+            <span className="text-sm text-muted-foreground italic">Precio no disponible</span>
+          ) : (
+            <span className="text-xl font-bold text-foreground">
+              {formatCurrency(prop.rent)}
+              <span className="text-xs font-normal text-muted-foreground">/mo</span>
+            </span>
+          )}
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={() => onEdit(prop.id)}>
-              <Pencil className="h-3.5 w-3.5" />
-              Editar
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 gap-1.5 text-destructive hover:border-destructive hover:text-destructive"
-              onClick={() => onDelete(prop.id)}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              Eliminar
-            </Button>
+            {onEdit && (
+              <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={() => onEdit(prop.id)}>
+                <Pencil className="h-3.5 w-3.5" />
+                Editar
+              </Button>
+            )}
+            {onDelete && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1.5 text-destructive hover:border-destructive hover:text-destructive"
+                onClick={() => onDelete(prop.id)}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Eliminar
+              </Button>
+            )}
           </div>
         </div>
 
@@ -186,7 +197,7 @@ function DrawerContent({
             {[
               { value: "overview", label: "General" },
               { value: "tenant", label: "Inquilino" },
-              { value: "financials", label: "Finanzas" },
+              ...(!hideFinancials ? [{ value: "financials", label: "Finanzas" }] : []),
               { value: "activity", label: "Actividad" },
             ].map((tab) => (
               <TabsTrigger
@@ -283,8 +294,10 @@ function DrawerContent({
                         {[
                           { label: "Fecha de inicio", value: formatDate(contract.startDate, "long") },
                           { label: "Fecha de vencimiento", value: formatDate(contract.endDate, "long") },
-                          { label: "Alquiler mensual", value: formatCurrency(contract.monthlyRent) },
-                          { label: "Depósito de garantía", value: formatCurrency(contract.deposit) },
+                          ...(!hideFinancials ? [
+                            { label: "Alquiler mensual", value: formatCurrency(contract.monthlyRent) },
+                            { label: "Depósito de garantía", value: formatCurrency(contract.deposit) },
+                          ] : []),
                           { label: "Preaviso", value: `${contract.noticePeriodDays} días` },
                           { label: "Opción de renovación", value: contract.renewalOption ? "Sí" : "No" },
                         ].map(({ label, value }) => (

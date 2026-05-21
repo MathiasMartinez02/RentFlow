@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { formatCurrency, formatDate } from "@/shared/utils/format";
 import { useCatalogStore } from "@/store/catalog.store";
+import { usePermissions } from "@/hooks/use-permissions";
 import type { MaintenanceTicket } from "@/types/maintenance";
 
 const STATUS_CONFIG = {
@@ -72,11 +73,13 @@ interface MaintenanceTableProps {
   tickets: MaintenanceTicket[];
   isLoading?: boolean;
   onView: (id: string) => void;
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
 export function MaintenanceTable({ tickets, isLoading, onView, onEdit, onDelete }: MaintenanceTableProps) {
+  const { is } = usePermissions();
+  const hideCosts = is("INQUILINO");
   const [sorting, setSorting] = useState<SortingState>([]);
 
   const allProperties = useCatalogStore((s) => s.properties);
@@ -154,10 +157,10 @@ export function MaintenanceTable({ tickets, isLoading, onView, onEdit, onDelete 
           );
         },
       },
-      {
+      ...(!hideCosts ? [{
         accessorKey: "estimatedCost",
-        header: ({ column }) => <SortableHeader column={column as Column<MaintenanceTicket, unknown>} label="Costo Est." />,
-        cell: ({ row }) => {
+        header: ({ column }: { column: Column<MaintenanceTicket, unknown> }) => <SortableHeader column={column} label="Costo Est." />,
+        cell: ({ row }: { row: { original: MaintenanceTicket } }) => {
           const t = row.original;
           const cost = t.finalCost ?? t.estimatedCost;
           if (!cost) return <span className="text-xs text-muted-foreground/60">—</span>;
@@ -165,7 +168,7 @@ export function MaintenanceTable({ tickets, isLoading, onView, onEdit, onDelete 
             <span className="text-sm font-semibold text-foreground">{formatCurrency(cost)}</span>
           );
         },
-      },
+      }] : []),
       {
         accessorKey: "reportedAt",
         header: ({ column }) => <SortableHeader column={column as Column<MaintenanceTicket, unknown>} label="Reportado" />,
@@ -190,23 +193,29 @@ export function MaintenanceTable({ tickets, isLoading, onView, onEdit, onDelete 
                 <DropdownMenuItem onClick={() => onView(row.original.id)}>
                   <Eye className="mr-2 h-4 w-4" /> Ver
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onEdit(row.original.id)}>
-                  <Pencil className="mr-2 h-4 w-4" /> Editar
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => onDelete(row.original.id)}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" /> Eliminar
-                </DropdownMenuItem>
+                {onEdit && (
+                  <DropdownMenuItem onClick={() => onEdit(row.original.id)}>
+                    <Pencil className="mr-2 h-4 w-4" /> Editar
+                  </DropdownMenuItem>
+                )}
+                {onDelete && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => onDelete(row.original.id)}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" /> Eliminar
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         ),
       },
     ],
-    [propertyMap, technicianMap, onView, onEdit, onDelete]
+    [propertyMap, technicianMap, onView, onEdit, onDelete, hideCosts]
   );
 
   const table = useReactTable({

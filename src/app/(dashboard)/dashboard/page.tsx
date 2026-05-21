@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { DashboardView } from "@/features/dashboard";
+import { DashboardRouter } from "@/features/dashboard/dashboard-router";
 
 export const metadata: Metadata = {
   title: "Panel",
 };
 
 export default function DashboardPage() {
-  return <DashboardView />;
+  return <DashboardRouter />;
 }

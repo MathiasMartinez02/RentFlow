@@ -7,6 +7,7 @@ export type Resource =
   | "contracts"
   | "payments"
   | "maintenance"
+  | "leads"
   | "settings"
   | "activity"
   | "users";
@@ -21,15 +22,15 @@ const VIEW_CREATE: Action[] = ["view", "create"];
 const MATRIX: Record<UserRole, Partial<Record<Resource, Action[]>>> = {
   SUPER_ADMIN: {
     dashboard: ALL, properties: ALL, tenants: ALL, contracts: ALL,
-    payments: ALL, maintenance: ALL, settings: ALL, activity: ALL, users: ALL,
+    payments: ALL, maintenance: ALL, leads: ALL, settings: ALL, activity: ALL, users: ALL,
   },
   ADMIN: {
     dashboard: ALL, properties: ALL, tenants: ALL, contracts: ALL,
-    payments: ALL, maintenance: ALL, settings: ALL, activity: ALL, users: MANAGE,
+    payments: ALL, maintenance: ALL, leads: ALL, settings: ALL, activity: ALL, users: MANAGE,
   },
   CLIENTE: {
     dashboard: ALL, properties: ALL, tenants: ALL, contracts: ALL,
-    payments: ALL, maintenance: ALL, settings: ALL, activity: ALL, users: MANAGE,
+    payments: ALL, maintenance: ALL, leads: ALL, settings: ALL, activity: ALL, users: MANAGE,
   },
   FINANZAS: {
     dashboard: VIEW, properties: VIEW, tenants: VIEW, contracts: VIEW,
@@ -37,7 +38,7 @@ const MATRIX: Record<UserRole, Partial<Record<Resource, Action[]>>> = {
   },
   VENDEDOR: {
     dashboard: VIEW, properties: VIEW, tenants: ALL, contracts: ALL,
-    payments: VIEW, maintenance: VIEW, activity: VIEW,
+    payments: VIEW, maintenance: VIEW, leads: ALL, activity: VIEW,
   },
   MANTENIMIENTO: {
     dashboard: VIEW, properties: VIEW, tenants: VIEW,

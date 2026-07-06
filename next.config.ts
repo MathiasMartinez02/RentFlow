@@ -6,6 +6,8 @@ const nextConfig: NextConfig = {
       { hostname: "images.unsplash.com" },
       { hostname: "avatars.githubusercontent.com" },
       { hostname: "ui-avatars.com" },
+      // Agregado: host de NEXT_PUBLIC_WS_URL (http://localhost:3000) para servir las fotos públicas
+      { hostname: "localhost" },
     ],
   },
 };

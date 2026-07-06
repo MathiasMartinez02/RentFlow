@@ -61,6 +61,15 @@ interface UIState {
   closeMaintenanceDrawer: () => void;
   openMaintenanceForm: (id?: string) => void;
   closeMaintenanceForm: () => void;
+
+  selectedLeadId: string | null;
+  leadDrawerOpen: boolean;
+  leadFormOpen: boolean;
+  editingLeadId: string | null;
+  openLeadDrawer: (id: string) => void;
+  closeLeadDrawer: () => void;
+  openLeadForm: (id?: string) => void;
+  closeLeadForm: () => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -130,6 +139,16 @@ export const useUIStore = create<UIState>()(
       closeMaintenanceDrawer: () => set({ maintenanceDrawerOpen: false, selectedMaintenanceId: null }),
       openMaintenanceForm: (id) => set({ maintenanceFormOpen: true, editingMaintenanceId: id ?? null }),
       closeMaintenanceForm: () => set({ maintenanceFormOpen: false, editingMaintenanceId: null }),
+
+      selectedLeadId: null,
+      leadDrawerOpen: false,
+      leadFormOpen: false,
+      editingLeadId: null,
+
+      openLeadDrawer: (id) => set({ selectedLeadId: id, leadDrawerOpen: true }),
+      closeLeadDrawer: () => set({ leadDrawerOpen: false, selectedLeadId: null }),
+      openLeadForm: (id) => set({ leadFormOpen: true, editingLeadId: id ?? null }),
+      closeLeadForm: () => set({ leadFormOpen: false, editingLeadId: null }),
     }),
     {
       name: "rentflow-ui",

@@ -4,14 +4,16 @@ import type { ApiResponse } from "@/types";
 
 // ─── Enum mappers ───────────────────────────────────────────────────────────
 
-const PROPERTY_TYPE_TO_BACKEND: Record<PropertyType | string, string> = {
+// Exportado (antes era interno) para reusar la traducción de tipoPropiedad en public-properties.service
+export const PROPERTY_TYPE_TO_BACKEND: Record<PropertyType | string, string> = {
   apartment: "APARTAMENTO",
   house: "CASA",
   commercial: "LOCAL",
   studio: "OFICINA",
 };
 
-const PROPERTY_TYPE_FROM_BACKEND: Record<string, PropertyType> = {
+// Exportado (antes era interno) para reusar la traducción de tipoPropiedad en public-properties.service
+export const PROPERTY_TYPE_FROM_BACKEND: Record<string, PropertyType> = {
   APARTAMENTO: "apartment",
   CASA: "house",
   LOCAL: "commercial",

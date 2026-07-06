@@ -75,6 +75,13 @@ export const NAV_GROUPS: NavGroup[] = [
         description: "Solicitudes de reparación",
       },
       {
+        label: "Leads",
+        href: "/leads",
+        icon: "Target",
+        resource: "leads",
+        description: "CRM de oportunidades comerciales",
+      },
+      {
         label: "Actividad",
         href: "/actividad",
         icon: "Activity",
